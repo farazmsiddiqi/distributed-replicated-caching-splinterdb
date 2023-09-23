@@ -1,0 +1,6 @@
+[submodule "third-party/nuraft"]
+	path = third-party/nuraft
+	url = https://github.com/ebay/nuraft
+[submodule "third-party/splinterdb"]
+	path = third-party/splinterdb
+	url = https://github.com/nkaush/splinterdb.git
