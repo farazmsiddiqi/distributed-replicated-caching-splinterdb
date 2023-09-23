@@ -1,8 +1,16 @@
 FROM --platform=arm64 neilk3/splinterdb-build-env
 
+RUN apt-get update -y \
+    && apt-get install -y cmake zlib1g-dev \
+    && apt-get clean
+
 ENV CC clang
-ENV LD clang
+ENV CXX clang++-13
+ENV LD clang++-13
 
-COPY third-party/splinterdb /splinterdb
+COPY third-party/nuraft /work/nuraft
+WORKDIR /work/nuraft/build
+RUN cmake -DDISABLE_SSL=1 ../ && make
 
-WORKDIR /splinterdb
+COPY third-party/splinterdb /work/splinterdb
+WORKDIR /work/splinterdb
