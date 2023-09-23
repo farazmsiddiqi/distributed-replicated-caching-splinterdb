@@ -1,0 +1,8 @@
+FROM --platform=arm64 neilk3/splinterdb-build-env
+
+ENV CC clang
+ENV LD clang
+
+COPY third-party/splinterdb /splinterdb
+
+WORKDIR /splinterdb
