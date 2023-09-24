@@ -1,0 +1,6 @@
+add_executable(splinter splinterdb.cpp)
+target_compile_features(splinter PRIVATE cxx_std_20)
+target_link_libraries(splinter splinterdb)
+target_link_libraries(splinter nuraft)
+
+target_compile_definitions(splinter PRIVATE -DSPLINTERDB_PLATFORM_DIR=platform_linux)

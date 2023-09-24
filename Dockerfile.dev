@@ -7,17 +7,21 @@ RUN apt-get update -y \
 ENV CC clang
 ENV CXX clang++-13
 ENV LD clang++-13
+ENV LIBS_DIR /work/libs/
+ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
 COPY third-party/nuraft /work/nuraft
 WORKDIR /work/nuraft/build
-RUN cmake -DDISABLE_SSL=1 ../ && make
+RUN cmake -DDISABLE_SSL=1 ../ \
+    && make \
+    && mkdir -p ${LIBS_DIR} \
+    && cp /work/nuraft/build/libnuraft* ${LIBS_DIR}
 
 COPY third-party/splinterdb /work/splinterdb
-WORKDIR /work
-COPY apps apps
-COPY docker/CMakeLists.txt CMakeLists.txt
+WORKDIR /work/splinterdb
+RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
 
 WORKDIR /work/build
-RUN cmake ..
-
-# WORKDIR /work/splinterdb
+COPY apps /work/apps
+COPY docker/CMakeLists.txt /work/CMakeLists.txt
+RUN cmake .. && make

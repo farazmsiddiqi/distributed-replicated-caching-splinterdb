@@ -7,7 +7,7 @@
     - see [log store example](third-party/nuraft/examples/in_memory_log_store.hxx)
     - [ ] state machine implementation
     - [ ] log storage implementation
-    - state machine will invoke splinterdb API (see [splinterdb API](third-party/splinterdb/include))
+    - state machine and log will individually will invoke splinterdb API on different DB instances (see [splinterdb API](third-party/splinterdb/include))
 - [ ] create a API for server
     - Invokes the state machine API
     - [ ] read
