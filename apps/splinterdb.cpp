@@ -7,9 +7,12 @@
  *  - Close and reopen a SplinterDB db (instance)
  */
 
+#include <cstring>
+
 extern "C" {
-#include <stdio.h>
-#include <string.h>
+#include <stdbool.h>
+#define _Bool bool
+
 #include "splinterdb/default_data_config.h"
 #include "splinterdb/splinterdb.h"
 }
@@ -117,14 +120,14 @@ main()
 
    int i = 0;
    for (; splinterdb_iterator_valid(it); splinterdb_iterator_next(it)) {
-      slice key, value;
-      splinterdb_iterator_get_current(it, &key, &value);
+      slice it_key, it_value;
+      splinterdb_iterator_get_current(it, &it_key, &it_value);
       printf("  [%d] key='%.*s', value='%.*s'\n",
              i,
-             (int)slice_length(key),
-             (char *)slice_data(key),
-             (int)slice_length(value),
-             (char *)slice_data(value));
+             (int)slice_length(it_key),
+             (char *)slice_data(it_key),
+             (int)slice_length(it_value),
+             (char *)slice_data(it_value));
       i++;
    }
    rc = splinterdb_iterator_status(it);

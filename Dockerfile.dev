@@ -22,6 +22,8 @@ WORKDIR /work/splinterdb
 RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
 
 WORKDIR /work/build
+COPY include /work/include
 COPY apps /work/apps
+COPY src /work/src
 COPY docker/CMakeLists.txt /work/CMakeLists.txt
 RUN cmake .. && make
