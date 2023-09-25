@@ -22,3 +22,18 @@ WORKDIR /work/splinterdb
 RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
 
 WORKDIR /work/build
+COPY include /work/include
+COPY apps /work/apps
+COPY src /work/src
+COPY docker/CMakeLists.txt /work/CMakeLists.txt
+RUN cmake .. && make
+
+FROM --platform=arm64 neilk3/splinterdb-run-env as run
+
+ENV LIBS_DIR /shared-libs/
+ENV LD_LIBRARY_PATH ${LIBS_DIR}
+
+COPY --from=build /work/libs/*.so ${LIBS_DIR}
+COPY --from=build /work/build/apps /apps
+
+WORKDIR /apps

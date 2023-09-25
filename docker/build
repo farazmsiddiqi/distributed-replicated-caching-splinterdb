@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+cmake .. && make
+EXIT_CODE=$?
+
+echo "Build finished with code $EXIT_CODE"
+
+exit $EXIT_CODE
