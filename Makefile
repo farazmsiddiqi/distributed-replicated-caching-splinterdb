@@ -18,13 +18,17 @@ dev: dev-image
 run: run-image
 	docker run -it --network="host" --rm $(IMAGE_RUN_ENV)
 
-dev-image:
-	docker build -t $(IMAGE_BUILD_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.build-env $(SPLINTERDB_ROOT)
+dev-image: dev-base-image
 	docker build -t $(IMAGE_BUILD_ENV) -f Dockerfile.dev .
 
-run-image:
-	docker build -t $(IMAGE_RUN_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.run-env $(SPLINTERDB_ROOT)
+run-image: dev-base-image run-base-image
 	docker build -t $(IMAGE_RUN_ENV) -f Dockerfile.run .
+
+dev-base-image:
+	docker build -t $(IMAGE_BUILD_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.build-env $(SPLINTERDB_ROOT)
+
+run-base-image:
+	docker build -t $(IMAGE_RUN_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.run-env $(SPLINTERDB_ROOT)
 
 submodules:
 	git submodule update --init --recursive
