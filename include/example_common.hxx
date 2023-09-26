@@ -17,13 +17,6 @@ limitations under the License.
 
 #pragma once
 
-#include <iostream>
-
-#include "libnuraft/nuraft.hxx"
-#include "in_memory_state_mgr.hxx"
-#include "logger_wrapper.hxx"
-#include "logger.h"
-
 using namespace nuraft;
 
 using raft_result = cmd_result< ptr<buffer> >;
@@ -137,7 +130,7 @@ std::vector<std::string> tokenize(const char* str, char c = ' ') {
 
 void loop() {
     char cmd[1000];
-    std::string prompt = "calc " + std::to_string(stuff.server_id_) + "> ";
+    std::string prompt = "keyval " + std::to_string(stuff.server_id_) + "> ";
     while (true) {
 #if defined(__linux__) || defined(__APPLE__)
         std::cout << _CLM_GREEN << prompt << _CLM_END;
@@ -219,7 +212,7 @@ void init_raft(ptr<state_machine> sm_instance) {
         }
         std::cout << ".";
         fflush(stdout);
-        calc_server::sleep_ms(250);
+        TestSuite::sleep_ms(250);
     }
     std::cout << " FAILED" << std::endl;
     log_wrap.reset();

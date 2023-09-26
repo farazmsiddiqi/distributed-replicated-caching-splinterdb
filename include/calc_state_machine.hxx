@@ -17,12 +17,14 @@ limitations under the License.
 
 #pragma once
 
-#include "libnuraft/nuraft.hxx"
+#include "nuraft.hxx"
 
 #include <atomic>
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <mutex>
+#include <unordered_map>
 
 #include <string.h>
 
@@ -32,8 +34,16 @@ namespace calc_server {
 
 class calc_state_machine : public state_machine {
 public:
+    // calc_state_machine(bool async_snapshot = false)
+    //     : cur_value_(0)
+    //     , last_committed_idx_(0)
+    //     , async_snapshot_(async_snapshot)
+    //     {}
+
+    // ~calc_state_machine() {}
+
     calc_state_machine(bool async_snapshot = false)
-        : cur_value_(0)
+        : cur_map_()
         , last_committed_idx_(0)
         , async_snapshot_(async_snapshot)
         {}
@@ -48,28 +58,59 @@ public:
         SET = 0x4
     };
 
+    enum kv_op_type : int {
+        PUT = 0x0,
+        UDPATE = 0x1,
+        READ = 0x2
+    };
+
+    struct kv_op_payload {
+        kv_op_type type_;
+        int64_t key_;
+        int64_t val_;
+    };
+
     struct op_payload {
         op_type type_;
         int oprnd_;
     };
 
-    static ptr<buffer> enc_log(const op_payload& payload) {
+    // static ptr<buffer> enc_log(const op_payload& payload) {
+    //     // Encode from {operator, operand} to Raft log.
+    //     ptr<buffer> ret = buffer::alloc(sizeof(op_payload));
+    //     buffer_serializer bs(ret);
+
+    //     // WARNING: We don't consider endian-safety in this example.
+    //     bs.put_raw(&payload, sizeof(op_payload));
+
+    //     return ret;
+    // }
+
+    static ptr<buffer> enc_log(const kv_op_payload& payload) {
         // Encode from {operator, operand} to Raft log.
-        ptr<buffer> ret = buffer::alloc(sizeof(op_payload));
+        ptr<buffer> ret = buffer::alloc(sizeof(kv_op_payload));
         buffer_serializer bs(ret);
 
         // WARNING: We don't consider endian-safety in this example.
-        bs.put_raw(&payload, sizeof(op_payload));
+        bs.put_raw(&payload, sizeof(kv_op_payload));
 
         return ret;
     }
 
-    static void dec_log(buffer& log, op_payload& payload_out) {
+    // static void dec_log(buffer& log, op_payload& payload_out) {
+    //     // Decode from Raft log to {operator, operand} pair.
+    //     assert(log.size() == sizeof(op_payload));
+
+    //     buffer_serializer bs(log);
+    //     memcpy(&payload_out, bs.get_raw(log.size()), sizeof(op_payload));
+    // }
+
+    static void dec_log(buffer& log, kv_op_payload& payload_out) {
         // Decode from Raft log to {operator, operand} pair.
-        assert(log.size() == sizeof(op_payload));
+        assert(log.size() == sizeof(kv_op_payload));
 
         buffer_serializer bs(log);
-        memcpy(&payload_out, bs.get_raw(log.size()), sizeof(op_payload));
+        memcpy(&payload_out, bs.get_raw(log.size()), sizeof(kv_op_payload));
     }
 
     ptr<buffer> pre_commit(const ulong log_idx, buffer& data) {
@@ -77,20 +118,48 @@ public:
         return nullptr;
     }
 
+    // ptr<buffer> commit(const ulong log_idx, buffer& data) {
+    //     op_payload payload;
+    //     dec_log(data, payload);
+
+    //     int64_t prev_value = cur_value_;
+    //     switch (payload.type_) {
+    //     case ADD:   prev_value += payload.oprnd_;   break;
+    //     case SUB:   prev_value -= payload.oprnd_;   break;
+    //     case MUL:   prev_value *= payload.oprnd_;   break;
+    //     case DIV:   prev_value /= payload.oprnd_;   break;
+    //     default:
+    //     case SET:   prev_value  = payload.oprnd_;   break;
+    //     }
+    //     cur_value_ = prev_value;
+
+    //     last_committed_idx_ = log_idx;
+
+    //     // Return Raft log number as a return result.
+    //     ptr<buffer> ret = buffer::alloc( sizeof(log_idx) );
+    //     buffer_serializer bs(ret);
+    //     bs.put_u64(log_idx);
+    //     return ret;
+    // }
+
     ptr<buffer> commit(const ulong log_idx, buffer& data) {
-        op_payload payload;
+        kv_op_payload payload;
         dec_log(data, payload);
 
-        int64_t prev_value = cur_value_;
         switch (payload.type_) {
-        case ADD:   prev_value += payload.oprnd_;   break;
-        case SUB:   prev_value -= payload.oprnd_;   break;
-        case MUL:   prev_value *= payload.oprnd_;   break;
-        case DIV:   prev_value /= payload.oprnd_;   break;
+        case PUT:
+            cur_map_.insert({payload.key_, payload.val_});
+            break;
+
+        case UDPATE:
+            cur_map_.insert({payload.key_, payload.val_});
+            break;
+
         default:
-        case SET:   prev_value  = payload.oprnd_;   break;
+            std::cout << "current state machine value"
+                      << get_current_map()
+                      << std::endl; 
         }
-        cur_value_ = prev_value;
 
         last_committed_idx_ = log_idx;
 
@@ -133,14 +202,14 @@ public:
             // Object ID == 0: first object, put dummy data.
             data_out = buffer::alloc( sizeof(int32) );
             buffer_serializer bs(data_out);
-            bs.put_i32(0);
+            bs.put_str("{}");
             is_last_obj = false;
 
         } else {
             // Object ID > 0: second object, put actual value.
             data_out = buffer::alloc( sizeof(ulong) );
             buffer_serializer bs(data_out);
-            bs.put_u64( ctx->value_ );
+            bs.put_str( serialize_map(ctx->value_) );
             is_last_obj = true;
         }
         return 0;
@@ -161,7 +230,8 @@ public:
         } else {
             // Object ID > 0: actual snapshot value.
             buffer_serializer bs(data);
-            int64_t local_value = (int64_t)bs.get_u64();
+            std::string map_str = bs.get_str();
+            std::unordered_map<int64_t, int64_t> local_value = deserialize_map(map_str);
 
             std::lock_guard<std::mutex> ll(snapshots_lock_);
             auto entry = snapshots_.find(s.get_last_log_idx());
@@ -172,13 +242,14 @@ public:
         obj_id++;
     }
 
+    // TODO: issue is likely here
     bool apply_snapshot(snapshot& s) {
         std::lock_guard<std::mutex> ll(snapshots_lock_);
         auto entry = snapshots_.find(s.get_last_log_idx());
         if (entry == snapshots_.end()) return false;
 
         ptr<snapshot_ctx> ctx = entry->second;
-        cur_value_ = ctx->value_;
+        cur_map_ = ctx->value_;
         return true;
     }
 
@@ -213,21 +284,62 @@ public:
         }
     }
 
-    int64_t get_current_value() const { return cur_value_; }
+    std::string get_current_map() const {
+        std::ostringstream oss;
+
+        oss << "{" << std::endl;
+        for (const auto& pair : cur_map_) {
+            oss << "\t" << pair.first << ": " << pair.second << std::endl;
+        }
+        oss << "}" << std::endl;
+
+        return oss.str();
+    }
+
+    std::string serialize_map(const std::unordered_map<int64_t, int64_t>& map) {
+        std::ostringstream oss;
+        for (const auto& pair : map) {
+            oss << pair.first << ":" << pair.second << ",";
+        }
+        std::string result = oss.str();
+        return result.substr(0, result.length() - 1);  // Remove the trailing comma
+    }
+
+
+    std::unordered_map<int64_t, int64_t> deserialize_map(const std::string& serialized) {
+        std::unordered_map<int64_t, int64_t> map;
+
+        std::istringstream iss(serialized);
+        std::string pairStr;
+        
+        while (std::getline(iss, pairStr, ',')) {  // Split by comma
+            size_t colonPos = pairStr.find(':');
+            if (colonPos == std::string::npos) {
+                continue;  // Skip if no colon found
+            }
+            
+            int64_t key = std::stoi(pairStr.substr(0, colonPos));
+            int64_t value = std::stoi(pairStr.substr(colonPos + 1));
+            
+            map[key] = value;
+        }
+        
+        return map;
+    }
 
 private:
     struct snapshot_ctx {
-        snapshot_ctx( ptr<snapshot>& s, int64_t v )
+        snapshot_ctx( ptr<snapshot>& s, std::unordered_map<int64_t, int64_t> v )
             : snapshot_(s), value_(v) {}
         ptr<snapshot> snapshot_;
-        int64_t value_;
+        std::unordered_map<int64_t, int64_t> value_;
     };
 
     void create_snapshot_internal(ptr<snapshot> ss) {
         std::lock_guard<std::mutex> ll(snapshots_lock_);
 
         // Put into snapshot map.
-        ptr<snapshot_ctx> ctx = cs_new<snapshot_ctx>(ss, cur_value_);
+        ptr<snapshot_ctx> ctx = cs_new<snapshot_ctx>(ss, cur_map_);
         snapshots_[ss->get_last_log_idx()] = ctx;
 
         // Maintain last 3 snapshots only.
@@ -281,7 +393,8 @@ private:
     }
 
     // State machine's current value.
-    std::atomic<int64_t> cur_value_;
+    // std::atomic<int64_t> cur_value_;
+    std::unordered_map<int64_t, int64_t> cur_map_;
 
     // Last committed Raft log number.
     std::atomic<uint64_t> last_committed_idx_;
