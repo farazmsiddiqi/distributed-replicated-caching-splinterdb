@@ -212,7 +212,7 @@ void init_raft(ptr<state_machine> sm_instance) {
         }
         std::cout << ".";
         fflush(stdout);
-        TestSuite::sleep_ms(250);
+        calc_server::sleep_ms(250);
     }
     std::cout << " FAILED" << std::endl;
     log_wrap.reset();

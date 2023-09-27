@@ -17,7 +17,7 @@ limitations under the License.
 
 #pragma once
 
-#include "nuraft.hxx"
+#include "libnuraft/nuraft.hxx"
 
 #include <atomic>
 #include <cassert>
@@ -25,6 +25,7 @@ limitations under the License.
 #include <sstream>
 #include <mutex>
 #include <unordered_map>
+#include <optional>
 
 #include <string.h>
 
@@ -58,7 +59,7 @@ public:
         SET = 0x4
     };
 
-    enum kv_op_type : int {
+    enum kv_op_type : uint8_t {
         PUT = 0x0,
         UDPATE = 0x1,
         READ = 0x2
@@ -66,8 +67,8 @@ public:
 
     struct kv_op_payload {
         kv_op_type type_;
-        int64_t key_;
-        int64_t val_;
+        std::string key_;
+        std::string val_;
     };
 
     struct op_payload {
@@ -75,42 +76,31 @@ public:
         int oprnd_;
     };
 
-    // static ptr<buffer> enc_log(const op_payload& payload) {
-    //     // Encode from {operator, operand} to Raft log.
-    //     ptr<buffer> ret = buffer::alloc(sizeof(op_payload));
-    //     buffer_serializer bs(ret);
-
-    //     // WARNING: We don't consider endian-safety in this example.
-    //     bs.put_raw(&payload, sizeof(op_payload));
-
-    //     return ret;
-    // }
-
     static ptr<buffer> enc_log(const kv_op_payload& payload) {
         // Encode from {operator, operand} to Raft log.
         ptr<buffer> ret = buffer::alloc(sizeof(kv_op_payload));
         buffer_serializer bs(ret);
 
-        // WARNING: We don't consider endian-safety in this example.
-        bs.put_raw(&payload, sizeof(kv_op_payload));
+        std::cout << "creating log for " << payload.key_ << "=" << payload.val_ << std::endl;
+
+        bs.put_u8(payload.type_);
+        bs.put_str(payload.key_);
+        bs.put_str(payload.val_);
 
         return ret;
     }
-
-    // static void dec_log(buffer& log, op_payload& payload_out) {
-    //     // Decode from Raft log to {operator, operand} pair.
-    //     assert(log.size() == sizeof(op_payload));
-
-    //     buffer_serializer bs(log);
-    //     memcpy(&payload_out, bs.get_raw(log.size()), sizeof(op_payload));
-    // }
 
     static void dec_log(buffer& log, kv_op_payload& payload_out) {
         // Decode from Raft log to {operator, operand} pair.
         assert(log.size() == sizeof(kv_op_payload));
 
+
         buffer_serializer bs(log);
-        memcpy(&payload_out, bs.get_raw(log.size()), sizeof(kv_op_payload));
+        payload_out.type_ = static_cast<kv_op_type>(bs.get_u8());
+        payload_out.key_ = bs.get_str();
+        payload_out.val_ = bs.get_str();
+
+        std::cout << "deserializing log for " << payload_out.key_ << "=" << payload_out.val_ << std::endl;
     }
 
     ptr<buffer> pre_commit(const ulong log_idx, buffer& data) {
@@ -152,7 +142,7 @@ public:
             break;
 
         case UDPATE:
-            cur_map_.insert({payload.key_, payload.val_});
+            cur_map_[payload.key_] = payload.val_;
             break;
 
         default:
@@ -199,19 +189,19 @@ public:
         }
 
         if (obj_id == 0) {
-            // Object ID == 0: first object, put dummy data.
+            // Object ID == 0: first object, put the size of the map.
             data_out = buffer::alloc( sizeof(int32) );
             buffer_serializer bs(data_out);
-            bs.put_str("{}");
+            bs.put_i32(ctx->value_.size());
             is_last_obj = false;
-
         } else {
-            // Object ID > 0: second object, put actual value.
-            data_out = buffer::alloc( sizeof(ulong) );
-            buffer_serializer bs(data_out);
-            bs.put_str( serialize_map(ctx->value_) );
+            // for now, serialize the entire map. In the future, we will need a
+            // special end marker so that we know when to stop deserializing
+            // the map.
+            serialize_map(data_out, ctx->value_);
             is_last_obj = true;
         }
+        
         return 0;
     }
 
@@ -221,22 +211,23 @@ public:
                               bool is_first_obj,
                               bool is_last_obj)
     {
+        buffer_serializer bs(data);
+
         if (obj_id == 0) {
             // Object ID == 0: it contains dummy value, create snapshot context.
             ptr<buffer> snp_buf = s.serialize();
             ptr<snapshot> ss = snapshot::deserialize(*snp_buf);
             create_snapshot_internal(ss);
-
+            int32 expected_size = bs.get_i32();
+            std::cout << "Expected size: " << expected_size << std::endl;
         } else {
             // Object ID > 0: actual snapshot value.
-            buffer_serializer bs(data);
-            std::string map_str = bs.get_str();
-            std::unordered_map<int64_t, int64_t> local_value = deserialize_map(map_str);
-
             std::lock_guard<std::mutex> ll(snapshots_lock_);
             auto entry = snapshots_.find(s.get_last_log_idx());
+            entry->second->value_.clear();
             assert(entry != snapshots_.end());
-            entry->second->value_ = local_value;
+            entry->second->value_ = deserialize_map(bs);
+            std::cout << "Got " << entry->second->value_.size() << " entries" << std::endl;
         }
         // Request next object.
         obj_id++;
@@ -284,6 +275,15 @@ public:
         }
     }
 
+    std::optional<std::string> get_value(const std::string& key) {
+        auto iter = cur_map_.find(key);
+        if (iter == cur_map_.end()) {
+            return std::nullopt;
+        }
+
+        return iter->second;
+    }
+
     std::string get_current_map() const {
         std::ostringstream oss;
 
@@ -296,43 +296,39 @@ public:
         return oss.str();
     }
 
-    std::string serialize_map(const std::unordered_map<int64_t, int64_t>& map) {
-        std::ostringstream oss;
-        for (const auto& pair : map) {
-            oss << pair.first << ":" << pair.second << ",";
+    static void serialize_map(ptr<buffer>& data_out, const std::unordered_map<std::string, std::string>& to_serialize) {
+        size_t buf_size = 0;
+        for (const auto& pair : to_serialize) {
+            buf_size += pair.first.length() + pair.second.length() + (2 * sizeof(uint32_t));
         }
-        std::string result = oss.str();
-        return result.substr(0, result.length() - 1);  // Remove the trailing comma
+
+        data_out = buffer::alloc(buf_size);
+        buffer_serializer bs(data_out);
+
+        for (const auto& pair : to_serialize) {
+            bs.put_str(pair.first);
+            bs.put_str(pair.second);
+        }
     }
 
+    std::unordered_map<std::string, std::string> deserialize_map(buffer_serializer& bs) {
+        std::unordered_map<std::string, std::string> map;
 
-    std::unordered_map<int64_t, int64_t> deserialize_map(const std::string& serialized) {
-        std::unordered_map<int64_t, int64_t> map;
-
-        std::istringstream iss(serialized);
-        std::string pairStr;
-        
-        while (std::getline(iss, pairStr, ',')) {  // Split by comma
-            size_t colonPos = pairStr.find(':');
-            if (colonPos == std::string::npos) {
-                continue;  // Skip if no colon found
-            }
-            
-            int64_t key = std::stoi(pairStr.substr(0, colonPos));
-            int64_t value = std::stoi(pairStr.substr(colonPos + 1));
-            
+        while (bs.pos() < bs.size()) {
+            std::string key = bs.get_str();
+            std::string value = bs.get_str();
             map[key] = value;
         }
-        
+
         return map;
     }
 
 private:
     struct snapshot_ctx {
-        snapshot_ctx( ptr<snapshot>& s, std::unordered_map<int64_t, int64_t> v )
+        snapshot_ctx( ptr<snapshot>& s, std::unordered_map<std::string, std::string> v )
             : snapshot_(s), value_(v) {}
         ptr<snapshot> snapshot_;
-        std::unordered_map<int64_t, int64_t> value_;
+        std::unordered_map<std::string, std::string> value_;
     };
 
     void create_snapshot_internal(ptr<snapshot> ss) {
@@ -394,7 +390,7 @@ private:
 
     // State machine's current value.
     // std::atomic<int64_t> cur_value_;
-    std::unordered_map<int64_t, int64_t> cur_map_;
+    std::unordered_map<std::string, std::string> cur_map_;
 
     // Last committed Raft log number.
     std::atomic<uint64_t> last_committed_idx_;

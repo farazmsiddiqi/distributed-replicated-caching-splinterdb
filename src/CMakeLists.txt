@@ -12,11 +12,13 @@ file(GLOB SOURCE_LIST CONFIGURE_DEPENDS
 add_library(replicated-splinterdb ${SOURCE_LIST} ${HEADER_LIST})
 add_library(replicated-splinterdb-debug ${SOURCE_LIST} ${HEADER_LIST})
 
+target_compile_definitions(replicated-splinterdb PRIVATE -DSPLINTERDB_PLATFORM_DIR=platform_linux)
+target_compile_definitions(replicated-splinterdb-debug PRIVATE -DSPLINTERDB_PLATFORM_DIR=platform_linux)
+
 # Users of our library will need this directory.
 target_include_directories(replicated-splinterdb PUBLIC "${ReplicatedSplinterDB_SOURCE_DIR}/include/")
 target_include_directories(replicated-splinterdb-debug PUBLIC "${ReplicatedSplinterDB_SOURCE_DIR}/include/")
 
-# Declare dependency on absl::flat_hash_map and absl::flat_hash_set libraries
 target_link_libraries(replicated-splinterdb nuraft)
 target_link_libraries(replicated-splinterdb-debug nuraft)
 

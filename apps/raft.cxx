@@ -31,7 +31,8 @@ using namespace nuraft;
 
 namespace calc_server {
 
-static raft_params::return_method_type CALL_TYPE = raft_params::blocking;
+static raft_params::return_method_type CALL_TYPE
+    = raft_params::blocking;
 //  = raft_params::async_handler;
 
 static bool ASYNC_SNAPSHOT_CREATION = false;
@@ -61,33 +62,24 @@ void handle_result(ptr<calc_server::Timer> timer,
               << calc_server::usToString( timer->getTimeUs() )
               << ", return value: "
               << ret_value
-              << ", state machine value: "
-              << get_sm()->get_current_value()
+              << ", state machine value: \n"
+              << get_sm()->get_current_map()
               << std::endl;
 }
 
 void append_log(const std::string& cmd,
-                const std::vector<std::string>& tokens)
-{
-    char cmd_char = cmd[0];
-    int operand = atoi( tokens[0].substr(1).c_str() );
-    calc_state_machine::op_type op = calc_state_machine::ADD;
-    switch (cmd_char) {
-    case '+':   op = calc_state_machine::ADD;   break;
-    case '-':   op = calc_state_machine::SUB;   break;
-    case '*':   op = calc_state_machine::MUL;   break;
-    case '/':
-        op = calc_state_machine::DIV;
-        if (!operand) {
-            std::cout << "cannot divide by zero" << std::endl;
-            return;
-        }
-        break;
-    default:    op = calc_state_machine::SET;   break;
-    };
+                const std::vector<std::string>& tokens) {
+    calc_state_machine::kv_op_type op;
+    if ( cmd == "put" ) {
+        op = calc_state_machine::PUT; 
+    } else if ( cmd == "update" ) {
+        op = calc_state_machine::UDPATE; 
+    } else {
+        throw std::runtime_error("unknown command");
+    }
 
     // Serialize and generate Raft log to append.
-    ptr<buffer> new_log = calc_state_machine::enc_log( {op, operand} );
+    ptr<buffer> new_log = calc_state_machine::enc_log( {op, tokens[1], tokens[2]} );
 
     // To measure the elapsed time.
     ptr<calc_server::Timer> timer = cs_new<calc_server::Timer>();
@@ -155,8 +147,8 @@ void print_status(const std::string& cmd,
         << "last snapshot log term: "
             << (stuff.sm_->last_snapshot()
                 ? stuff.sm_->last_snapshot()->get_last_log_term() : 0) << std::endl
-        << "state machine value: "
-            << get_sm()->get_current_value() << std::endl;
+        << "state machine value: \n"
+            << get_sm()->get_current_map() << std::endl;
 }
 
 void help(const std::string& cmd,
@@ -188,24 +180,25 @@ bool do_cmd(const std::vector<std::string>& tokens) {
         stuff.launcher_.shutdown(5);
         stuff.reset();
         return false;
-
-    } else if ( cmd[0] == '+' ||
-                cmd[0] == '-' ||
-                cmd[0] == '*' ||
-                cmd[0] == '/' ) {
-        // e.g.) +1
+    } else if ( cmd == "put" || cmd == "update" ) {
+        // e.g.) p5
         append_log(cmd, tokens);
 
     } else if ( cmd == "add" ) {
         // e.g.) add 2 localhost:12345
         add_server(cmd, tokens);
 
+    } else if (cmd == "get") {
+        auto result = get_sm()->get_value(tokens[1]);
+        if (result.has_value()) {
+            std::cout << "value: " << result.value() << std::endl;
+        } else {
+            std::cout << "no such key (" << std::quoted(tokens[1]) << ")" << std::endl;
+        }
     } else if ( cmd == "st" || cmd == "stat" ) {
         print_status(cmd, tokens);
-
     } else if ( cmd == "ls" || cmd == "list" ) {
         server_list(cmd, tokens);
-
     } else if ( cmd == "h" || cmd == "help" ) {
         help(cmd, tokens);
     }
