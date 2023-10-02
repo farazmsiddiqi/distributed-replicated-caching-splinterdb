@@ -17,7 +17,7 @@ limitations under the License.
 
 #pragma once
 
-#include "in_memory_log_store.hxx"
+#include "in_memory_log_store.h"
 
 #include "libnuraft/nuraft.hxx"
 

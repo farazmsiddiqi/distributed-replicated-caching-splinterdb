@@ -1,7 +1,5 @@
 # replicated-splinterdb
 
-xxx
-
 ## Development Process
 
 Run `make dev` in a shell to start a container with all the necessary dependencies to build this project. This make rule will also mount the `src/`, `apps/`, and `include/` directories onto the `/work` directory in the container. The `libnuraft` and `libsplinterdb` libraries will be built during the container image build stage.

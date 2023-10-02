@@ -19,10 +19,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
-#include "logger.h"
+#include "logging/logger.h"
 
 #if defined(__linux__) || defined(__APPLE__)
-    #include "backtrace.h"
+    #include "logging/backtrace.h"
 #endif
 
 #include <algorithm>
@@ -207,7 +207,7 @@ void SimpleLoggerMgr::_flushStackTraceBuffer(size_t buffer_len,
 void SimpleLoggerMgr::flushStackTraceBuffer(RawStackInfo& stack_info) {
 #if defined(__linux__) || defined(__APPLE__)
     size_t len = _stack_interpret(&stack_info.stackPtrs[0],
-                                  stack_info.stackPtrs.size(),
+                                  static_cast<int>(stack_info.stackPtrs.size()),
                                   stackTraceBuffer,
                                   stackTraceBufferSize);
     if (!len) return;
@@ -752,6 +752,7 @@ SimpleLogger::SimpleLogger(const std::string& file_path,
 }
 
 SimpleLogger::~SimpleLogger() {
+    flushAll();
     stop();
 }
 

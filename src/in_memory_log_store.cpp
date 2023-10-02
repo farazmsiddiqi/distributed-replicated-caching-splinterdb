@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
-#include "in_memory_log_store.hxx"
+#include "in_memory_log_store.h"
 
 #include "libnuraft/nuraft.hxx"
 
@@ -98,8 +98,8 @@ ulong inmem_log_store::append(ptr<log_entry>& entry) {
     return idx;
 }
 
-void inmem_log_store::write_at(ulong index, ptr<log_entry>& entry) {
-    ptr<log_entry> clone = make_clone(entry);
+void inmem_log_store::write_at(ulong index, ptr<log_entry>& new_entry) {
+    ptr<log_entry> clone = make_clone(new_entry);
 
     // Discard all logs equal to or greater than `index.
     std::lock_guard<std::mutex> l(logs_lock_);

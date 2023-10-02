@@ -39,6 +39,9 @@ limitations under the License.
     #include <sys/time.h>
 #endif
 
+#include "libnuraft/logger.hxx"
+#include "libnuraft/ptr.hxx"
+
 // To suppress false alarms by thread sanitizer,
 // add -DSUPPRESS_TSAN_FALSE_ALARMS=1 flag to CXXFLAGS.
 // #define SUPPRESS_TSAN_FALSE_ALARMS (1)
@@ -184,13 +187,14 @@ limitations under the License.
 
 
 class SimpleLoggerMgr;
-class SimpleLogger {
+class SimpleLogger : public nuraft::logger {
     friend class SimpleLoggerMgr;
 public:
     static const int MSG_SIZE = 4096;
     static const std::memory_order MOR = std::memory_order_relaxed;
 
     enum Levels {
+        DISABLED    = -1,
         SYS         = 0,
         FATAL       = 1,
         ERROR       = 2,
@@ -214,8 +218,8 @@ public:
 
         using MyCout = std::basic_ostream< char, std::char_traits<char> >;
         typedef MyCout& (*EndlFunc)(MyCout&);
-        inline LoggerStream& operator<<(EndlFunc func) {
-            func(sStream);
+        inline LoggerStream& operator<<(EndlFunc f) {
+            f(sStream);
             return *this;
         }
 
@@ -264,6 +268,16 @@ public:
                           size_t line ) {
         thread_local LoggerStream msg;
         msg.setLogInfo(level, logger, file, func, line);
+        return msg;
+    }
+
+    LoggerStream& stream( int level,
+                          nuraft::ptr<SimpleLogger> logger,
+                          const char* file,
+                          const char* func,
+                          size_t line ) {
+        thread_local LoggerStream msg;
+        msg.setLogInfo(level, logger.get(), file, func, line);
         return msg;
     }
 
@@ -334,6 +348,33 @@ public:
              size_t line_number,
              const char* format,
              ...);
+
+    /**
+     * Put a log with level, line number, function name,
+     * and file name.
+     *
+     * Log level info:
+     *    Trace:    6
+     *    Debug:    5
+     *    Info:     4
+     *    Warning:  3
+     *    Error:    2
+     *    Fatal:    1
+     *
+     * @param level Level of given log.
+     * @param source_file Name of file where the log is located.
+     * @param func_name Name of function where the log is located.
+     * @param line_number Line number of the log.
+     * @param log_line Contents of the log.
+     */
+    void put_details(int level,
+                     const char* source_file,
+                     const char* func_name,
+                     size_t line_number,
+                     const std::string& log_line) override {
+        put(level, source_file, func_name, line_number, log_line.c_str());
+    }
+
     void flushAll();
 
 private:
