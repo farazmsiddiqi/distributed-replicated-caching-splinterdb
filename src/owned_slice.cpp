@@ -1,4 +1,5 @@
 #include "owned_slice.h"
+
 #include <cstring>
 
 namespace replicated_splinterdb {
@@ -12,8 +13,8 @@ owned_slice::owned_slice(const char* data, size_t length) {
     memcpy(const_cast<char*>(this->data), data, length);
 }
 
-owned_slice::owned_slice(const slice& spl_slice) 
-    : owned_slice((char*) spl_slice.data, spl_slice.length) {}
+owned_slice::owned_slice(const slice& spl_slice)
+    : owned_slice((char*)spl_slice.data, spl_slice.length) {}
 
 owned_slice::owned_slice(const std::string& str)
     : owned_slice(str.c_str(), str.length()) {}
@@ -58,7 +59,7 @@ void owned_slice::serialize(nuraft::buffer_serializer& bs) const {
     bs.put_raw(data, length);
 }
 
-void owned_slice::deserialize(owned_slice& slice_out, 
+void owned_slice::deserialize(owned_slice& slice_out,
                               nuraft::buffer_serializer& bs) {
     slice_out.length = bs.get_u64();
 
@@ -67,21 +68,15 @@ void owned_slice::deserialize(owned_slice& slice_out,
     memcpy(const_cast<char*>(slice_out.data), bytes, slice_out.length);
 }
 
-size_t owned_slice::serialized_size() const {
-    return sizeof(length) + length;
-}
+size_t owned_slice::serialized_size() const { return sizeof(length) + length; }
 
-size_t owned_slice::size() const {
-    return length;
-}
+size_t owned_slice::size() const { return length; }
 
 void owned_slice::fill_slice(slice& slice_out) const {
     slice_out.length = length;
     slice_out.data = data;
 }
 
-std::string owned_slice::to_string() const {
-    return std::string(data, length);
-}
+std::string owned_slice::to_string() const { return std::string(data, length); }
 
 }  // namespace replicated_splinterdb

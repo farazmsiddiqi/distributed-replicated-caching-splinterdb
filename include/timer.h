@@ -7,18 +7,15 @@
 namespace replicated_splinterdb {
 
 class Timer {
-public:
-    Timer() : duration_ms(0) {
-        reset();
-    }
-    Timer(size_t _duration_ms) : duration_ms(_duration_ms) {
-        reset();
-    }
+  public:
+    Timer() : duration_ms(0) { reset(); }
+    Timer(size_t _duration_ms) : duration_ms(_duration_ms) { reset(); }
     inline bool timeout() { return timeover(); }
     bool timeover() {
         auto cur = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed = cur - start;
-        if (duration_ms < static_cast<size_t>(elapsed.count()) * 1000) return true;
+        if (duration_ms < static_cast<size_t>(elapsed.count()) * 1000)
+            return true;
         return false;
     }
     uint64_t getTimeSec() {
@@ -36,9 +33,7 @@ public:
         std::chrono::duration<double> elapsed = cur - start;
         return (uint64_t)(elapsed.count() * 1000000);
     }
-    void reset() {
-        start = std::chrono::system_clock::now();
-    }
+    void reset() { start = std::chrono::system_clock::now(); }
     void resetSec(size_t _duration_sec) {
         duration_ms = _duration_sec * 1000;
         reset();
@@ -47,7 +42,8 @@ public:
         duration_ms = _duration_ms;
         reset();
     }
-private:
+
+  private:
     std::chrono::time_point<std::chrono::system_clock> start;
     size_t duration_ms;
 };
@@ -73,11 +69,12 @@ static std::string usToString(uint64_t us) {
     return ss.str();
 }
 
-[[maybe_unused]] static void sleep_ms(size_t ms, const std::string& msg = std::string()) {
+[[maybe_unused]] static void sleep_ms(size_t ms,
+                                      const std::string& msg = std::string()) {
     if (!msg.empty()) printf("%s (%zu ms)\n", msg.c_str(), ms);
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-};  // namespace replicated_splinterdb;
+};  // namespace replicated_splinterdb
 
 #endif  // REPLICATED_SPLINTERDB_TIMER_H

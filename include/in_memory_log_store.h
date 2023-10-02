@@ -17,27 +17,27 @@ limitations under the License.
 
 #pragma once
 
-#include "libnuraft/event_awaiter.hxx"
-#include "libnuraft/internal_timer.hxx"
-#include "libnuraft/log_store.hxx"
-
 #include <atomic>
 #include <map>
 #include <mutex>
+
+#include "libnuraft/event_awaiter.hxx"
+#include "libnuraft/internal_timer.hxx"
+#include "libnuraft/log_store.hxx"
 
 namespace nuraft {
 
 class raft_server;
 
 class inmem_log_store : public log_store {
-public:
+  public:
     inmem_log_store();
 
     ~inmem_log_store();
 
     __nocopy__(inmem_log_store);
 
-public:
+  public:
     ulong next_slot() const;
 
     ulong start_index() const;
@@ -51,7 +51,7 @@ public:
     ptr<std::vector<ptr<log_entry>>> log_entries(ulong start, ulong end);
 
     ptr<std::vector<ptr<log_entry>>> log_entries_ext(
-            ulong start, ulong end, int64 batch_size_hint_in_bytes = 0);
+        ulong start, ulong end, int64 batch_size_hint_in_bytes = 0);
 
     ptr<log_entry> entry_at(ulong index);
 
@@ -71,7 +71,7 @@ public:
 
     void set_disk_delay(raft_server* raft, size_t delay_ms);
 
-private:
+  private:
     static ptr<log_entry> make_clone(const ptr<log_entry>& entry);
 
     void disk_emul_loop();
@@ -104,8 +104,9 @@ private:
     std::atomic<size_t> disk_emul_delay;
 
     /**
-     * Map of <timestamp, log index>, emulating logs that is being written to disk.
-     * Log index will be regarded as "durable" after the corresponding timestamp.
+     * Map of <timestamp, log index>, emulating logs that is being written to
+     * disk. Log index will be regarded as "durable" after the corresponding
+     * timestamp.
      */
     std::map<uint64_t, uint64_t> disk_emul_logs_being_written_;
 
@@ -133,5 +134,4 @@ private:
     // Testing purpose --------------- END
 };
 
-}
-
+}  // namespace nuraft

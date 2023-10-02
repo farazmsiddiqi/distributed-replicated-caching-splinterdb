@@ -21,6 +21,9 @@ limitations under the License.
 
 #pragma once
 
+#include <signal.h>
+#include <stdarg.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -32,11 +35,8 @@ limitations under the License.
 #include <thread>
 #include <unordered_set>
 #include <vector>
-
-#include <signal.h>
-#include <stdarg.h>
 #if defined(__linux__) || defined(__APPLE__)
-    #include <sys/time.h>
+#include <sys/time.h>
 #endif
 
 #include "libnuraft/logger.hxx"
@@ -54,34 +54,31 @@ limitations under the License.
 // 5: Debug   [DEBG]
 // 6: Trace   [TRAC]
 
-
 // printf style log macro
-#define _log_(level, l, ...)        \
+#define _log_(level, l, ...)            \
     if (l && l->getLogLevel() >= level) \
-        (l)->put(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
+    (l)->put(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define _log_sys(l, ...)    _log_(SimpleLogger::SYS,     l, __VA_ARGS__)
-#define _log_fatal(l, ...)  _log_(SimpleLogger::FATAL,   l, __VA_ARGS__)
-#define _log_err(l, ...)    _log_(SimpleLogger::ERROR,   l, __VA_ARGS__)
-#define _log_warn(l, ...)   _log_(SimpleLogger::WARNING, l, __VA_ARGS__)
-#define _log_info(l, ...)   _log_(SimpleLogger::INFO,    l, __VA_ARGS__)
-#define _log_debug(l, ...)  _log_(SimpleLogger::DEBUG,   l, __VA_ARGS__)
-#define _log_trace(l, ...)  _log_(SimpleLogger::TRACE,   l, __VA_ARGS__)
-
+#define _log_sys(l, ...) _log_(SimpleLogger::SYS, l, __VA_ARGS__)
+#define _log_fatal(l, ...) _log_(SimpleLogger::FATAL, l, __VA_ARGS__)
+#define _log_err(l, ...) _log_(SimpleLogger::ERROR, l, __VA_ARGS__)
+#define _log_warn(l, ...) _log_(SimpleLogger::WARNING, l, __VA_ARGS__)
+#define _log_info(l, ...) _log_(SimpleLogger::INFO, l, __VA_ARGS__)
+#define _log_debug(l, ...) _log_(SimpleLogger::DEBUG, l, __VA_ARGS__)
+#define _log_trace(l, ...) _log_(SimpleLogger::TRACE, l, __VA_ARGS__)
 
 // stream log macro
 #define _stream_(level, l)              \
     if (l && l->getLogLevel() >= level) \
-        l->eos() = l->stream(level, l, __FILE__, __func__, __LINE__)
+    l->eos() = l->stream(level, l, __FILE__, __func__, __LINE__)
 
-#define _s_sys(l)   _stream_(SimpleLogger::SYS,     l)
-#define _s_fatal(l) _stream_(SimpleLogger::FATAL,   l)
-#define _s_err(l)   _stream_(SimpleLogger::ERROR,   l)
-#define _s_warn(l)  _stream_(SimpleLogger::WARNING, l)
-#define _s_info(l)  _stream_(SimpleLogger::INFO,    l)
-#define _s_debug(l) _stream_(SimpleLogger::DEBUG,   l)
-#define _s_trace(l) _stream_(SimpleLogger::TRACE,   l)
-
+#define _s_sys(l) _stream_(SimpleLogger::SYS, l)
+#define _s_fatal(l) _stream_(SimpleLogger::FATAL, l)
+#define _s_err(l) _stream_(SimpleLogger::ERROR, l)
+#define _s_warn(l) _stream_(SimpleLogger::WARNING, l)
+#define _s_info(l) _stream_(SimpleLogger::INFO, l)
+#define _s_debug(l) _stream_(SimpleLogger::DEBUG, l)
+#define _s_trace(l) _stream_(SimpleLogger::TRACE, l)
 
 // Do printf style log, but print logs in `lv1` level during normal time,
 // once in given `interval_ms` interval, print a log in `lv2` level.
@@ -89,134 +86,138 @@ limitations under the License.
 //
 // This function is global throughout the process, so that
 // multiple threads will share the interval.
-#define _timed_log_g(l, interval_ms, lv1, lv2, ...)                     \
-{                                                                       \
-    _timed_log_definition(static);                                      \
-    _timed_log_body(l, interval_ms, lv1, lv2, __VA_ARGS__);             \
-}
+#define _timed_log_g(l, interval_ms, lv1, lv2, ...)             \
+    {                                                           \
+        _timed_log_definition(static);                          \
+        _timed_log_body(l, interval_ms, lv1, lv2, __VA_ARGS__); \
+    }
 
 // Same as `_timed_log_g` but per-thread level.
-#define _timed_log_t(l, interval_ms, lv1, lv2, ...)                     \
-{                                                                       \
-    _timed_log_definition(thread_local);                                \
-    _timed_log_body(l, interval_ms, lv1, lv2, __VA_ARGS__);             \
-}
+#define _timed_log_t(l, interval_ms, lv1, lv2, ...)             \
+    {                                                           \
+        _timed_log_definition(thread_local);                    \
+        _timed_log_body(l, interval_ms, lv1, lv2, __VA_ARGS__); \
+    }
 
-#define _timed_log_definition(prefix)                                   \
-    prefix std::mutex timer_lock;                                       \
-    prefix bool first_event_fired = false;                              \
-    prefix std::chrono::system_clock::time_point last_timeout =         \
-        std::chrono::system_clock::now();                               \
+#define _timed_log_definition(prefix)                           \
+    prefix std::mutex timer_lock;                               \
+    prefix bool first_event_fired = false;                      \
+    prefix std::chrono::system_clock::time_point last_timeout = \
+        std::chrono::system_clock::now();
 
-#define _timed_log_body(l, interval_ms, lv1, lv2, ...)                  \
-    std::chrono::system_clock::time_point cur =                         \
-        std::chrono::system_clock::now();                               \
-    bool timeout = false;                                               \
-    {   std::lock_guard<std::mutex> l(timer_lock);                      \
-        std::chrono::duration<double> elapsed = cur - last_timeout;     \
-        if ( elapsed.count() * 1000 > interval_ms ||                    \
-             !first_event_fired ) {                                     \
-            cur = std::chrono::system_clock::now();                     \
-            elapsed = cur - last_timeout;                               \
-            if ( elapsed.count() * 1000 > interval_ms ||                \
-                 !first_event_fired ) {                                 \
-                timeout = first_event_fired = true;                     \
-                last_timeout = cur;                                     \
-            }                                                           \
-        }                                                               \
-    }                                                                   \
-    if (timeout) {                                                      \
-        _log_(lv2, l, __VA_ARGS__);                                     \
-    } else {                                                            \
-        _log_(lv1, l, __VA_ARGS__);                                     \
+#define _timed_log_body(l, interval_ms, lv1, lv2, ...)                        \
+    std::chrono::system_clock::time_point cur =                               \
+        std::chrono::system_clock::now();                                     \
+    bool timeout = false;                                                     \
+    {                                                                         \
+        std::lock_guard<std::mutex> l(timer_lock);                            \
+        std::chrono::duration<double> elapsed = cur - last_timeout;           \
+        if (elapsed.count() * 1000 > interval_ms || !first_event_fired) {     \
+            cur = std::chrono::system_clock::now();                           \
+            elapsed = cur - last_timeout;                                     \
+            if (elapsed.count() * 1000 > interval_ms || !first_event_fired) { \
+                timeout = first_event_fired = true;                           \
+                last_timeout = cur;                                           \
+            }                                                                 \
+        }                                                                     \
+    }                                                                         \
+    if (timeout) {                                                            \
+        _log_(lv2, l, __VA_ARGS__);                                           \
+    } else {                                                                  \
+        _log_(lv1, l, __VA_ARGS__);                                           \
     }
 
 #ifndef _CLM_DEFINED
 #define _CLM_DEFINED (1)
 
 #ifdef LOGGER_NO_COLOR
-    #define _CLM_D_GRAY     ""
-    #define _CLM_GREEN      ""
-    #define _CLM_B_GREEN    ""
-    #define _CLM_RED        ""
-    #define _CLM_B_RED      ""
-    #define _CLM_BROWN      ""
-    #define _CLM_B_BROWN    ""
-    #define _CLM_BLUE       ""
-    #define _CLM_B_BLUE     ""
-    #define _CLM_MAGENTA    ""
-    #define _CLM_B_MAGENTA  ""
-    #define _CLM_CYAN       ""
-    #define _CLM_END        ""
+#define _CLM_D_GRAY ""
+#define _CLM_GREEN ""
+#define _CLM_B_GREEN ""
+#define _CLM_RED ""
+#define _CLM_B_RED ""
+#define _CLM_BROWN ""
+#define _CLM_B_BROWN ""
+#define _CLM_BLUE ""
+#define _CLM_B_BLUE ""
+#define _CLM_MAGENTA ""
+#define _CLM_B_MAGENTA ""
+#define _CLM_CYAN ""
+#define _CLM_END ""
 
-    #define _CLM_WHITE_FG_RED_BG    ""
+#define _CLM_WHITE_FG_RED_BG ""
 #else
-    #define _CLM_D_GRAY     "\033[1;30m"
-    #define _CLM_GREEN      "\033[32m"
-    #define _CLM_B_GREEN    "\033[1;32m"
-    #define _CLM_RED        "\033[31m"
-    #define _CLM_B_RED      "\033[1;31m"
-    #define _CLM_BROWN      "\033[33m"
-    #define _CLM_B_BROWN    "\033[1;33m"
-    #define _CLM_BLUE       "\033[34m"
-    #define _CLM_B_BLUE     "\033[1;34m"
-    #define _CLM_MAGENTA    "\033[35m"
-    #define _CLM_B_MAGENTA  "\033[1;35m"
-    #define _CLM_CYAN       "\033[36m"
-    #define _CLM_B_GREY     "\033[1;37m"
-    #define _CLM_END        "\033[0m"
+#define _CLM_D_GRAY "\033[1;30m"
+#define _CLM_GREEN "\033[32m"
+#define _CLM_B_GREEN "\033[1;32m"
+#define _CLM_RED "\033[31m"
+#define _CLM_B_RED "\033[1;31m"
+#define _CLM_BROWN "\033[33m"
+#define _CLM_B_BROWN "\033[1;33m"
+#define _CLM_BLUE "\033[34m"
+#define _CLM_B_BLUE "\033[1;34m"
+#define _CLM_MAGENTA "\033[35m"
+#define _CLM_B_MAGENTA "\033[1;35m"
+#define _CLM_CYAN "\033[36m"
+#define _CLM_B_GREY "\033[1;37m"
+#define _CLM_END "\033[0m"
 
-    #define _CLM_WHITE_FG_RED_BG    "\033[37;41m"
+#define _CLM_WHITE_FG_RED_BG "\033[37;41m"
 #endif
 
-#define _CL_D_GRAY(str)     _CLM_D_GRAY     str _CLM_END
-#define _CL_GREEN(str)      _CLM_GREEN      str _CLM_END
-#define _CL_RED(str)        _CLM_RED        str _CLM_END
-#define _CL_B_RED(str)      _CLM_B_RED      str _CLM_END
-#define _CL_MAGENTA(str)    _CLM_MAGENTA    str _CLM_END
-#define _CL_BROWN(str)      _CLM_BROWN      str _CLM_END
-#define _CL_B_BROWN(str)    _CLM_B_BROWN    str _CLM_END
-#define _CL_B_BLUE(str)     _CLM_B_BLUE     str _CLM_END
-#define _CL_B_MAGENTA(str)  _CLM_B_MAGENTA  str _CLM_END
-#define _CL_CYAN(str)       _CLM_CYAN       str _CLM_END
-#define _CL_B_GRAY(str)     _CLM_B_GREY     str _CLM_END
+#define _CL_D_GRAY(str) _CLM_D_GRAY str _CLM_END
+#define _CL_GREEN(str) _CLM_GREEN str _CLM_END
+#define _CL_RED(str) _CLM_RED str _CLM_END
+#define _CL_B_RED(str) _CLM_B_RED str _CLM_END
+#define _CL_MAGENTA(str) _CLM_MAGENTA str _CLM_END
+#define _CL_BROWN(str) _CLM_BROWN str _CLM_END
+#define _CL_B_BROWN(str) _CLM_B_BROWN str _CLM_END
+#define _CL_B_BLUE(str) _CLM_B_BLUE str _CLM_END
+#define _CL_B_MAGENTA(str) _CLM_B_MAGENTA str _CLM_END
+#define _CL_CYAN(str) _CLM_CYAN str _CLM_END
+#define _CL_B_GRAY(str) _CLM_B_GREY str _CLM_END
 
-#define _CL_WHITE_FG_RED_BG(str)    _CLM_WHITE_FG_RED_BG    str _CLM_END
+#define _CL_WHITE_FG_RED_BG(str) _CLM_WHITE_FG_RED_BG str _CLM_END
 
 #endif
-
 
 class SimpleLoggerMgr;
 class SimpleLogger : public nuraft::logger {
     friend class SimpleLoggerMgr;
-public:
+
+  public:
     static const int MSG_SIZE = 4096;
     static const std::memory_order MOR = std::memory_order_relaxed;
 
     enum Levels {
-        DISABLED    = -1,
-        SYS         = 0,
-        FATAL       = 1,
-        ERROR       = 2,
-        WARNING     = 3,
-        INFO        = 4,
-        DEBUG       = 5,
-        TRACE       = 6,
-        UNKNOWN     = 99,
+        DISABLED = -1,
+        SYS = 0,
+        FATAL = 1,
+        ERROR = 2,
+        WARNING = 3,
+        INFO = 4,
+        DEBUG = 5,
+        TRACE = 6,
+        UNKNOWN = 99,
     };
 
     class LoggerStream : public std::ostream {
-    public:
-        LoggerStream() : std::ostream(&buf), level(0), logger(nullptr)
-                       , file(nullptr), func(nullptr), line(0) {}
+      public:
+        LoggerStream()
+            : std::ostream(&buf),
+              level(0),
+              logger(nullptr),
+              file(nullptr),
+              func(nullptr),
+              line(0) {}
 
-        template<typename T>
+        template <typename T>
         inline LoggerStream& operator<<(const T& data) {
             sStream << data;
             return *this;
         }
 
-        using MyCout = std::basic_ostream< char, std::char_traits<char> >;
+        using MyCout = std::basic_ostream<char, std::char_traits<char> >;
         typedef MyCout& (*EndlFunc)(MyCout&);
         inline LoggerStream& operator<<(EndlFunc f) {
             f(sStream);
@@ -225,17 +226,14 @@ public:
 
         inline void put() {
             if (logger) {
-                logger->put( level, file, func, line,
-                             "%s", sStream.str().c_str() );
+                logger->put(level, file, func, line, "%s",
+                            sStream.str().c_str());
             }
         }
 
-        inline void setLogInfo(int _level,
-                               SimpleLogger* _logger,
-                               const char* _file,
-                               const char* _func,
-                               size_t _line)
-        {
+        inline void setLogInfo(int _level, SimpleLogger* _logger,
+                               const char* _file, const char* _func,
+                               size_t _line) {
             sStream.str(std::string());
             level = _level;
             logger = _logger;
@@ -244,7 +242,7 @@ public:
             line = _line;
         }
 
-    private:
+      private:
         std::stringbuf buf;
         std::stringstream sStream;
         int level;
@@ -255,27 +253,24 @@ public:
     };
 
     class EndOfStmt {
-    public:
+      public:
         EndOfStmt() {}
         EndOfStmt(LoggerStream& src) { src.put(); }
-        EndOfStmt& operator=(LoggerStream& src) { src.put(); return *this; }
+        EndOfStmt& operator=(LoggerStream& src) {
+            src.put();
+            return *this;
+        }
     };
 
-    LoggerStream& stream( int level,
-                          SimpleLogger* logger,
-                          const char* file,
-                          const char* func,
-                          size_t line ) {
+    LoggerStream& stream(int level, SimpleLogger* logger, const char* file,
+                         const char* func, size_t line) {
         thread_local LoggerStream msg;
         msg.setLogInfo(level, logger, file, func, line);
         return msg;
     }
 
-    LoggerStream& stream( int level,
-                          nuraft::ptr<SimpleLogger> logger,
-                          const char* file,
-                          const char* func,
-                          size_t line ) {
+    LoggerStream& stream(int level, nuraft::ptr<SimpleLogger> logger,
+                         const char* file, const char* func, size_t line) {
         thread_local LoggerStream msg;
         msg.setLogInfo(level, logger.get(), file, func, line);
         return msg;
@@ -286,13 +281,13 @@ public:
         return _eos;
     }
 
-private:
+  private:
     struct LogElem {
         enum Status {
-            CLEAN       = 0,
-            WRITING     = 1,
-            DIRTY       = 2,
-            FLUSHING    = 3,
+            CLEAN = 0,
+            WRITING = 1,
+            DIRTY = 2,
+            FLUSHING = 3,
         };
 
         LogElem();
@@ -311,11 +306,10 @@ private:
         std::atomic<Status> status;
     };
 
-public:
-    SimpleLogger(const std::string& file_path,
-                 size_t max_log_elems           = 4096,
-                 uint64_t log_file_size_limit   = 32*1024*1024,
-                 uint32_t max_log_files         = 16);
+  public:
+    SimpleLogger(const std::string& file_path, size_t max_log_elems = 4096,
+                 uint64_t log_file_size_limit = 32 * 1024 * 1024,
+                 uint32_t max_log_files = 16);
     ~SimpleLogger();
 
     static void setCriticalInfo(const std::string& info_str);
@@ -339,15 +333,11 @@ public:
     void setDispLevel(int level);
     void setMaxLogFiles(size_t max_log_files);
 
-    inline int getLogLevel()  const { return curLogLevel.load(MOR); }
+    inline int getLogLevel() const { return curLogLevel.load(MOR); }
     inline int getDispLevel() const { return curDispLevel.load(MOR); }
 
-    void put(int level,
-             const char* source_file,
-             const char* func_name,
-             size_t line_number,
-             const char* format,
-             ...);
+    void put(int level, const char* source_file, const char* func_name,
+             size_t line_number, const char* format, ...);
 
     /**
      * Put a log with level, line number, function name,
@@ -367,23 +357,18 @@ public:
      * @param line_number Line number of the log.
      * @param log_line Contents of the log.
      */
-    void put_details(int level,
-                     const char* source_file,
-                     const char* func_name,
-                     size_t line_number,
-                     const std::string& log_line) override {
+    void put_details(int level, const char* source_file, const char* func_name,
+                     size_t line_number, const std::string& log_line) override {
         put(level, source_file, func_name, line_number, log_line.c_str());
     }
 
     void flushAll();
 
-private:
+  private:
     void calcTzGap();
-    void findMinMaxRevNum(size_t& min_revnum_out,
-                          size_t& max_revnum_out);
+    void findMinMaxRevNum(size_t& min_revnum_out, size_t& max_revnum_out);
     void findMinMaxRevNumInternal(bool& min_revnum_initialized,
-                                  size_t& min_revnum,
-                                  size_t& max_revnum,
+                                  size_t& min_revnum, size_t& max_revnum,
                                   std::string& f_name);
     std::string getLogFilePath(size_t file_num) const;
     void execCmd(const std::string& cmd);
@@ -418,7 +403,7 @@ private:
 
 // Singleton class
 class SimpleLoggerMgr {
-public:
+  public:
     struct CompElem;
 
     struct TimeInfo {
@@ -455,7 +440,7 @@ public:
     static void flushWorker();
     static void compressWorker();
 
-    void logStackBacktrace(size_t timeout_ms = 60*1000);
+    void logStackBacktrace(size_t timeout_ms = 60 * 1000);
     void flushCriticalInfo();
     void enableOnlyOneDisplayer();
     void flushAllLoggers() { flushAllLoggers(0, std::string()); }
@@ -469,8 +454,7 @@ public:
     void sleepCompressor(size_t ms);
     bool chkTermination() const;
     void setCriticalInfo(const std::string& info_str);
-    void setCrashDumpPath(const std::string& path,
-                          bool origin_only);
+    void setCrashDumpPath(const std::string& path, bool origin_only);
     void setStackTraceOriginOnly(bool origin_only);
 
     /**
@@ -489,7 +473,7 @@ public:
 
     static std::mutex displayLock;
 
-private:
+  private:
     // Copy is not allowed.
     SimpleLoggerMgr(const SimpleLoggerMgr&) = delete;
     SimpleLoggerMgr& operator=(const SimpleLoggerMgr&) = delete;
@@ -503,10 +487,8 @@ private:
     SimpleLoggerMgr();
     ~SimpleLoggerMgr();
 
-    void _flushStackTraceBuffer(size_t buffer_len,
-                                uint32_t tid_hash,
-                                uint64_t kernel_tid,
-                                bool crash_origin);
+    void _flushStackTraceBuffer(size_t buffer_len, uint32_t tid_hash,
+                                uint64_t kernel_tid, bool crash_origin);
     void flushStackTraceBuffer(RawStackInfo& stack_info);
     void flushRawStack(RawStackInfo& stack_info);
     void addRawStackInfo(bool crash_origin = false);

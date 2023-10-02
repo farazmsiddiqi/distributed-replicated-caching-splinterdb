@@ -1,9 +1,10 @@
 #ifndef REPLICATED_SPLINTERDB_OWNED_SLICE_H
 #define REPLICATED_SPLINTERDB_OWNED_SLICE_H
 
+#include <cstring>
+
 #include "libnuraft/buffer_serializer.hxx"
 #include "splinterdb_wrapper.h"
-#include <cstring>
 
 namespace replicated_splinterdb {
 
@@ -33,7 +34,8 @@ class owned_slice {
 
     static void from_cstring(owned_slice& slice_out, const char* cstring);
 
-    static void deserialize(owned_slice& slice_out, nuraft::buffer_serializer& bs);
+    static void deserialize(owned_slice& slice_out,
+                            nuraft::buffer_serializer& bs);
 
     void serialize(nuraft::buffer_serializer& bs) const;
 

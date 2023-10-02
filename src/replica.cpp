@@ -1,6 +1,7 @@
+#include "replica.h"
+
 #include <iostream>
 
-#include "replica.h"
 #include "in_memory_state_mgr.hxx"
 
 namespace replicated_splinterdb {
@@ -28,7 +29,7 @@ void default_raft_params_init(raft_params& params) {
     params.return_method_ = raft_params::blocking;
 }
 
-replica::replica(const replica_config& config) 
+replica::replica(const replica_config& config)
     : server_id_(config.server_id_),
       addr_(config.addr_),
       port_(config.port_),
@@ -43,8 +44,8 @@ replica::replica(const replica_config& config)
         throw std::invalid_argument("server_id must be set");
     }
 
-    std::string log_file_name = 
-        config_.log_file_.value_or("./srv" + std::to_string(server_id_) + ".log");
+    std::string log_file_name = config_.log_file_.value_or(
+        "./srv" + std::to_string(server_id_) + ".log");
 
     logger_ = cs_new<SimpleLogger>(log_file_name, config_.log_level_);
     logger_->setLogLevel(config_.log_level_);
@@ -52,10 +53,8 @@ replica::replica(const replica_config& config)
     logger_->setCrashDumpPath("./", true);
     logger_->start();
 
-    sm_ = cs_new<splinterdb_state_machine>(
-        config_.splinterdb_cfg_,
-        config_.snapshot_frequency_ <= 0
-    );
+    sm_ = cs_new<splinterdb_state_machine>(config_.splinterdb_cfg_,
+                                           config_.snapshot_frequency_ <= 0);
 
     smgr_ = cs_new<inmem_state_mgr>(server_id_, endpoint_);
 }
@@ -78,18 +77,13 @@ void replica::initialize() {
         // splinterdb_deregister_thread(this->sm_->get_splinterdb_handle());
     };
 
-    raft_instance_ = launcher_.init(
-        sm_,
-        smgr_,
-        logger_,
-        port_,
-        asio_opt,
-        params
-    );
+    raft_instance_ =
+        launcher_.init(sm_, smgr_, logger_, port_, asio_opt, params);
 
-    if ( !raft_instance_ ) {
+    if (!raft_instance_) {
         std::cerr << "Failed to initialize launcher (see the message "
-                     "in the log file)." << std::endl;
+                     "in the log file)."
+                  << std::endl;
         logger_.reset();
         exit(-1);
     }
@@ -118,13 +112,11 @@ void replica::shutdown(size_t time_limit_sec) {
 
 std::optional<owned_slice> replica::read(slice&& key) {
     splinterdb_lookup_result result;
-    splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0, NULL);
+    splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,
+                                  NULL);
 
-    int rc = splinterdb_lookup(
-        sm_->get_splinterdb_handle(),
-        std::forward<slice>(key),
-        &result
-    );
+    int rc = splinterdb_lookup(sm_->get_splinterdb_handle(),
+                               std::forward<slice>(key), &result);
 
     if (rc) {
         return std::nullopt;
@@ -139,7 +131,6 @@ std::optional<owned_slice> replica::read(slice&& key) {
     return owned_slice(value);
 }
 
-
 void replica::add_server(int32_t server_id, const std::string& endpoint) {
     srv_config srv_conf_to_add(server_id, endpoint);
     add_server(srv_conf_to_add);
@@ -151,12 +142,12 @@ void replica::add_server(const srv_config& srv_conf_to_add) {
         _s_err(logger_) << "failed to add server: " << ret->get_result_code();
         return;
     }
-    
+
     _s_info(logger_) << "add_server succeeded [id=" << srv_conf_to_add.get_id()
                      << ", endpoint=" << srv_conf_to_add.get_endpoint() << "]";
 }
 
-void replica::append_log(const splinterdb_operation& operation, 
+void replica::append_log(const splinterdb_operation& operation,
                          handle_commit_result handle_result) {
     ptr<buffer> new_log(operation.serialize());
     ptr<Timer> timer = cs_new<Timer>();
@@ -180,10 +171,8 @@ void replica::append_log(const splinterdb_operation& operation,
         //   `append_entries` returns immediately.
         //   `handle_result` will be invoked asynchronously,
         //   after getting a consensus.
-        ret->when_ready( std::bind( handle_result,
-                                    timer,
-                                    std::placeholders::_1,
-                                    std::placeholders::_2 ) );
+        ret->when_ready(std::bind(handle_result, timer, std::placeholders::_1,
+                                  std::placeholders::_2));
     }
 }
 

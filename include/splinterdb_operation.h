@@ -1,17 +1,14 @@
 #ifndef REPLICATED_SPLINTERDB_SPLINTERDB_OPERATION_H
 #define REPLICATED_SPLINTERDB_SPLINTERDB_OPERATION_H
 
-#include "owned_slice.h"
 #include <optional>
+
+#include "owned_slice.h"
 
 namespace replicated_splinterdb {
 
 struct splinterdb_operation {
-    enum splinterdb_operation_type : uint8_t {
-        PUT,
-        UPDATE,
-        DELETE
-    };
+    enum splinterdb_operation_type : uint8_t { PUT, UPDATE, DELETE };
 
     owned_slice key_;
     std::optional<owned_slice> value_;
@@ -27,7 +24,7 @@ struct splinterdb_operation {
 
     static splinterdb_operation make_update(owned_slice&& key,
                                             owned_slice&& value);
-    
+
     static splinterdb_operation make_delete(owned_slice&& key);
 };
 

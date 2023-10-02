@@ -12,21 +12,21 @@ namespace replicated_splinterdb {
 struct replica_config {
     replica_config(const data_config& splinterdb_data_cfg,
                    const splinterdb_config& splinterdb_cfg)
-      : server_id_(0),
-        port_(25000),
-        addr_("localhost"),
-        asio_thread_pool_size_(4),
-        return_method_(nuraft::raft_params::blocking),
-        snapshot_frequency_(1000000),
-        initialization_delay_ms_(250),
-        initialization_retries_(20),
-        log_file_(std::nullopt),
-        log_level_(SimpleLogger::Levels::INFO),
-        display_level_(SimpleLogger::Levels::WARNING),
-        splinterdb_data_cfg_(splinterdb_data_cfg),
-        splinterdb_cfg_(splinterdb_cfg) {
-    splinterdb_cfg_.data_cfg = &splinterdb_data_cfg_;
-}
+        : server_id_(0),
+          port_(25000),
+          addr_("localhost"),
+          asio_thread_pool_size_(4),
+          return_method_(nuraft::raft_params::blocking),
+          snapshot_frequency_(1000000),
+          initialization_delay_ms_(250),
+          initialization_retries_(20),
+          log_file_(std::nullopt),
+          log_level_(SimpleLogger::Levels::INFO),
+          display_level_(SimpleLogger::Levels::WARNING),
+          splinterdb_data_cfg_(splinterdb_data_cfg),
+          splinterdb_cfg_(splinterdb_cfg) {
+        splinterdb_cfg_.data_cfg = &splinterdb_data_cfg_;
+    }
 
     // Replica identifier parameters
 

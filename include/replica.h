@@ -5,8 +5,8 @@
 #include "logging/logger.h"
 #include "owned_slice.h"
 #include "replica_config.h"
-#include "splinterdb_state_machine.h"
 #include "splinterdb_operation.h"
+#include "splinterdb_state_machine.h"
 #include "timer.h"
 
 namespace replicated_splinterdb {
@@ -17,8 +17,8 @@ class replica {
   public:
     using raft_result = nuraft::cmd_result<nuraft::ptr<nuraft::buffer>>;
 
-    using handle_commit_result = 
-        std::function<void(nuraft::ptr<Timer>, raft_result&, nuraft::ptr<std::exception>&)>;  
+    using handle_commit_result = std::function<void(
+        nuraft::ptr<Timer>, raft_result&, nuraft::ptr<std::exception>&)>;
 
     replica() = delete;
 

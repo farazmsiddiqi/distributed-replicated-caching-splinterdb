@@ -6,6 +6,10 @@ IMAGE_RUN_ENV        = $(DOCKER_REPO)/replicated-splinterdb
 
 SPLINTERDB_ROOT = third-party/splinterdb
 
+SRC_DIR 	= src
+APPS_DIR 	= apps
+INCLUDE_DIR = include
+
 dev: dev-image
 	docker run -it --rm \
 		-v `pwd`/include:/work/include \
@@ -29,6 +33,11 @@ dev-base-image:
 
 run-base-image:
 	docker build -t $(IMAGE_RUN_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.run-env $(SPLINTERDB_ROOT)
+
+format:
+	find $(APPS_DIR) $(INCLUDE_DIR) $(SRC_DIR) \
+		-type f \( -iname \*.cpp -o -iname \*.hpp -o -iname \*.h \) | \
+		xargs clang-format -i
 
 submodules:
 	git submodule update --init --recursive

@@ -1,10 +1,11 @@
 #ifndef REPLICATED_SPLINTERDB_SPLINTERDB_STATE_MACHINE_H
 #define REPLICATED_SPLINTERDB_SPLINTERDB_STATE_MACHINE_H
 
+#include <map>
+
 #include "libnuraft/nuraft.hxx"
 #include "splinterdb_snapshot.h"
 #include "splinterdb_wrapper.h"
-#include <map>
 
 namespace replicated_splinterdb {
 
@@ -14,10 +15,10 @@ class splinterdb_state_machine : public nuraft::state_machine {
 
     splinterdb_state_machine(const splinterdb_state_machine&) = delete;
 
-    splinterdb_state_machine& operator=(const splinterdb_state_machine&) = delete;
+    splinterdb_state_machine& operator=(const splinterdb_state_machine&) =
+        delete;
 
   public:
-
     splinterdb_state_machine(const splinterdb_config& config,
                              bool disable_snapshots = false);
 
@@ -38,7 +39,8 @@ class splinterdb_state_machine : public nuraft::state_machine {
      * @param data Payload of the Raft log.
      * @return Result value of state machine.
      */
-    nuraft::ptr<nuraft::buffer> commit(const nuraft::ulong log_idx, nuraft::buffer& data) override;
+    nuraft::ptr<nuraft::buffer> commit(const nuraft::ulong log_idx,
+                                       nuraft::buffer& data) override;
 
     /**
      * Handler on the commit of a configuration change.
@@ -78,10 +80,8 @@ class splinterdb_state_machine : public nuraft::state_machine {
      * @param is_first_obj `true` if this is the first object.
      * @param is_last_obj `true` if this is the last object.
      */
-    void save_logical_snp_obj(nuraft::snapshot& s,
-                              nuraft::ulong& obj_id,
-                              nuraft::buffer& data,
-                              bool is_first_obj,
+    void save_logical_snp_obj(nuraft::snapshot& s, nuraft::ulong& obj_id,
+                              nuraft::buffer& data, bool is_first_obj,
                               bool is_last_obj) override;
 
     /**
@@ -113,11 +113,10 @@ class splinterdb_state_machine : public nuraft::state_machine {
      * @param[out] is_last_obj Set `true` if this is the last object.
      * @return Negative number if failed.
      */
-    int read_logical_snp_obj(nuraft::snapshot& s,
-                                     void*& user_snp_ctx,
-                                     nuraft::ulong obj_id,
-                                     nuraft::ptr<nuraft::buffer>& data_out,
-                                     bool& is_last_obj) override;
+    int read_logical_snp_obj(nuraft::snapshot& s, void*& user_snp_ctx,
+                             nuraft::ulong obj_id,
+                             nuraft::ptr<nuraft::buffer>& data_out,
+                             bool& is_last_obj) override;
 
     /**
      * Free user-defined instance that is allocated by
@@ -158,8 +157,9 @@ class splinterdb_state_machine : public nuraft::state_machine {
      * @param when_done Callback function that will be called after
      *                  snapshot creation is done.
      */
-    void create_snapshot(nuraft::snapshot& s,
-                         nuraft::async_result<bool>::handler_type& when_done) override;
+    void create_snapshot(
+        nuraft::snapshot& s,
+        nuraft::async_result<bool>::handler_type& when_done) override;
 
     /**
      * Decide to create snapshot or not.
@@ -171,18 +171,19 @@ class splinterdb_state_machine : public nuraft::state_machine {
      * @return `true` if wants to create snapshot.
      *         `false` if does not want to create snapshot.
      */
-    inline bool chk_create_snapshot() override { return !disable_snapshots_; } 
+    inline bool chk_create_snapshot() override { return !disable_snapshots_; }
 
     using Base::allow_leadership_transfer;
 
     inline splinterdb* get_splinterdb_handle() const { return spl_handle_; }
+
   private:
-    splinterdb *spl_handle_;
+    splinterdb* spl_handle_;
 
     // Last committed Raft log number.
     std::atomic<uint64_t> last_committed_idx_;
 
-    // Track whether the commit thread has been registered by splinterdb 
+    // Track whether the commit thread has been registered by splinterdb
     std::atomic<bool> commit_thread_initialized_;
 
     // Keeps the last 3 snapshots, by their Raft log numbers.

@@ -1,10 +1,11 @@
 #include "splinterdb_operation.h"
+
 #include "libnuraft/buffer.hxx"
 
 namespace replicated_splinterdb {
 
-using nuraft::buffer_serializer;
 using nuraft::buffer;
+using nuraft::buffer_serializer;
 using nuraft::ptr;
 
 ptr<buffer> splinterdb_operation::serialize() const {
@@ -25,7 +26,7 @@ ptr<buffer> splinterdb_operation::serialize() const {
     return buf;
 }
 
-void splinterdb_operation::deserialize(buffer& payload_in, 
+void splinterdb_operation::deserialize(buffer& payload_in,
                                        splinterdb_operation& operation_out) {
     buffer_serializer bs(payload_in);
 
@@ -42,28 +43,19 @@ void splinterdb_operation::deserialize(buffer& payload_in,
 
 splinterdb_operation splinterdb_operation::make_put(owned_slice&& key,
                                                     owned_slice&& value) {
-    return splinterdb_operation{
-        std::forward<owned_slice>(key),
-        std::forward<owned_slice>(value),
-        PUT
-    };
+    return splinterdb_operation{std::forward<owned_slice>(key),
+                                std::forward<owned_slice>(value), PUT};
 }
 
 splinterdb_operation splinterdb_operation::make_update(owned_slice&& key,
                                                        owned_slice&& value) {
-    return splinterdb_operation{
-        std::forward<owned_slice>(key),
-        std::forward<owned_slice>(value),
-        UPDATE
-    };
+    return splinterdb_operation{std::forward<owned_slice>(key),
+                                std::forward<owned_slice>(value), UPDATE};
 }
 
 splinterdb_operation splinterdb_operation::make_delete(owned_slice&& key) {
-    return splinterdb_operation{
-        std::forward<owned_slice>(key),
-        std::nullopt,
-        DELETE
-    };
+    return splinterdb_operation{std::forward<owned_slice>(key), std::nullopt,
+                                DELETE};
 }
 
 }  // namespace replicated_splinterdb

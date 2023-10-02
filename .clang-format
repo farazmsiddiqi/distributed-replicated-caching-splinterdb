@@ -1,0 +1,7 @@
+# See: https://google.github.io/styleguide/cppguide.html
+---
+BasedOnStyle: Google
+UseTab: Never
+AccessModifierOffset: -2
+IndentWidth: 4
+TabWidth: 4
