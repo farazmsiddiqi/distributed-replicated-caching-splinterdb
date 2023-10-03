@@ -2,7 +2,7 @@
 #define REPLICATED_SPLINTERDB_REPLICA_H
 
 #include "libnuraft/nuraft.hxx"
-#include "logging/logger.h"
+#include "logger.h"
 #include "owned_slice.h"
 #include "replica_config.h"
 #include "splinterdb_operation.h"

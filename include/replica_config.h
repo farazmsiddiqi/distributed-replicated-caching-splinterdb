@@ -4,7 +4,7 @@
 #include <optional>
 
 #include "libnuraft/nuraft.hxx"
-#include "logging/logger.h"
+#include "logger.h"
 #include "splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {

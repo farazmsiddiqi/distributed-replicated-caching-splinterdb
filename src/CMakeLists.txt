@@ -1,14 +1,12 @@
 file(GLOB HEADER_LIST CONFIGURE_DEPENDS
         "${ReplicatedSplinterDB_SOURCE_DIR}/include/*.h"
         "${ReplicatedSplinterDB_SOURCE_DIR}/include/*.hpp"
-        "${ReplicatedSplinterDB_SOURCE_DIR}/include/*.hxx"
-        "${ReplicatedSplinterDB_SOURCE_DIR}/src/logging/*")
+        "${ReplicatedSplinterDB_SOURCE_DIR}/include/*.hxx")
 
 file(GLOB SOURCE_LIST CONFIGURE_DEPENDS
         "${ReplicatedSplinterDB_SOURCE_DIR}/src/*.cc"
         "${ReplicatedSplinterDB_SOURCE_DIR}/src/*.cpp"
-        "${ReplicatedSplinterDB_SOURCE_DIR}/src/*.cxx"
-        "${ReplicatedSplinterDB_SOURCE_DIR}/src/logging/*")
+        "${ReplicatedSplinterDB_SOURCE_DIR}/src/*.cxx")
 
 # Make an automatic library - will be static or dynamic based on user setting
 add_library(replicated-splinterdb ${SOURCE_LIST} ${HEADER_LIST})

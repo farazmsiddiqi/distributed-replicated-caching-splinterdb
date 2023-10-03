@@ -4,3 +4,6 @@
 [submodule "third-party/splinterdb"]
 	path = third-party/splinterdb
 	url = https://github.com/nkaush/splinterdb.git
+[submodule "third-party/YCSB-cpp"]
+	path = third-party/YCSB-cpp
+	url = https://github.com/dassl-uiuc/YCSB-cpp.git
