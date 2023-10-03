@@ -17,12 +17,13 @@ struct replica_config {
           addr_("localhost"),
           asio_thread_pool_size_(4),
           return_method_(nuraft::raft_params::blocking),
-          snapshot_frequency_(1000000),
+          snapshot_frequency_(0),
           initialization_delay_ms_(250),
           initialization_retries_(20),
-          log_file_(std::nullopt),
+          raft_log_file_(std::nullopt),
           log_level_(SimpleLogger::Levels::INFO),
           display_level_(SimpleLogger::Levels::WARNING),
+          splinterdb_log_file_(std::nullopt),
           splinterdb_data_cfg_(splinterdb_data_cfg),
           splinterdb_cfg_(splinterdb_cfg) {
         splinterdb_cfg_.data_cfg = &splinterdb_data_cfg_;
@@ -47,9 +48,11 @@ struct replica_config {
 
     // Logging information
 
-    std::optional<std::string> log_file_;
+    std::optional<std::string> raft_log_file_;
     SimpleLogger::Levels log_level_;
     SimpleLogger::Levels display_level_;
+
+    std::optional<std::string> splinterdb_log_file_;
 
     // SplinterDB state machine configuration
 

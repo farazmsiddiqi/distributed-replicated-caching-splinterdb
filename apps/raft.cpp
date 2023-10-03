@@ -18,6 +18,7 @@ using nuraft::ptr;
 using replicated_splinterdb::owned_slice;
 using replicated_splinterdb::replica;
 using replicated_splinterdb::replica_config;
+using replicated_splinterdb::Result;
 using replicated_splinterdb::splinterdb_operation;
 using replicated_splinterdb::Timer;
 
@@ -112,13 +113,15 @@ int main(int argc, char** argv) {
             replica_instance.append_log(
                 splinterdb_operation::make_delete(tokens[1]), handle_result);
         } else if (tokens[0] == "get" && tokens.size() >= 2) {
-            std::optional<owned_slice> value = replica_instance.read(
+            Result<owned_slice, int32_t> lookup = replica_instance.read(
                 slice_create(tokens[1].size(), tokens[1].c_str()));
 
-            if (value.has_value()) {
-                std::cout << "value: " << value->to_string() << std::endl;
+            if (lookup.is_ok()) {
+                std::cout << "value: " << lookup->to_string() << std::endl;
             } else {
-                std::cout << "value not found" << std::endl;
+                std::cout << "key " << std::quoted(tokens[1])
+                          << " not found: rc=" << lookup.unwrap_err() 
+                          << std::endl;
             }
         }
     }

@@ -3,6 +3,8 @@
 #include <iostream>
 
 #include "in_memory_state_mgr.hxx"
+#include "splinterdb_state_machine.h"
+#include "splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {
 
@@ -36,6 +38,7 @@ replica::replica(const replica_config& config)
       endpoint_(addr_ + ":" + std::to_string(port_)),
       config_(config),
       logger_(nullptr),
+      spl_log_file_(nullptr),
       sm_(nullptr),
       smgr_(nullptr),
       launcher_(),
@@ -44,19 +47,29 @@ replica::replica(const replica_config& config)
         throw std::invalid_argument("server_id must be set");
     }
 
-    std::string log_file_name = config_.log_file_.value_or(
-        "./srv" + std::to_string(server_id_) + ".log");
-
-    logger_ = cs_new<SimpleLogger>(log_file_name, config_.log_level_);
+    // Set up Raft logging
+    std::string raft_log_file_name = config_.raft_log_file_.value_or(
+        "./srv-" + std::to_string(server_id_) + ".log");
+    logger_ = cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
     logger_->setLogLevel(config_.log_level_);
     logger_->setDispLevel(config_.display_level_);
     logger_->setCrashDumpPath("./", true);
     logger_->start();
 
+    // Set up SplinterDB logging
+    std::string spl_log_file_name = config_.splinterdb_log_file_.value_or(
+        "./spl-" + std::to_string(server_id_) + ".log");
+    spl_log_file_ = fopen(spl_log_file_name.c_str(), "w");
+    platform_set_log_streams(spl_log_file_, spl_log_file_);
+
+    // Initialize SplinterDB state machine and state manager
     sm_ = cs_new<splinterdb_state_machine>(config_.splinterdb_cfg_,
                                            config_.snapshot_frequency_ <= 0);
-
     smgr_ = cs_new<inmem_state_mgr>(server_id_, endpoint_);
+}
+
+replica::~replica() {
+    fclose(spl_log_file_);
 }
 
 void replica::initialize() {
@@ -110,7 +123,7 @@ void replica::shutdown(size_t time_limit_sec) {
     launcher_.shutdown(time_limit_sec);
 }
 
-std::optional<owned_slice> replica::read(slice&& key) {
+Result<owned_slice, int32_t> replica::read(slice&& key) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,
                                   NULL);
@@ -119,13 +132,13 @@ std::optional<owned_slice> replica::read(slice&& key) {
                                std::forward<slice>(key), &result);
 
     if (rc) {
-        return std::nullopt;
+        return rc;
     }
 
     slice value;
     rc = splinterdb_lookup_result_value(&result, &value);
     if (rc) {
-        return std::nullopt;
+        return rc;
     }
 
     return owned_slice(value);

@@ -5,11 +5,13 @@
 #include "logger.h"
 #include "owned_slice.h"
 #include "replica_config.h"
+#include "result.h"
 #include "splinterdb_operation.h"
-#include "splinterdb_state_machine.h"
 #include "timer.h"
 
 namespace replicated_splinterdb {
+
+class splinterdb_state_machine;
 
 void default_raft_params_init(nuraft::raft_params& params);
 
@@ -22,6 +24,8 @@ class replica {
 
     replica() = delete;
 
+    ~replica();
+
     replica(const replica&) = delete;
 
     replica& operator=(const replica&) = delete;
@@ -30,7 +34,7 @@ class replica {
 
     void initialize();
 
-    std::optional<owned_slice> read(slice&& key);
+    Result<owned_slice, int32_t> read(slice&& key);
 
     /**
      * Shutdown Raft server and ASIO service.
@@ -57,6 +61,7 @@ class replica {
     replica_config config_;
 
     nuraft::ptr<SimpleLogger> logger_;
+    FILE *spl_log_file_;
     nuraft::ptr<splinterdb_state_machine> sm_;
     nuraft::ptr<nuraft::state_mgr> smgr_;
     nuraft::raft_launcher launcher_;
