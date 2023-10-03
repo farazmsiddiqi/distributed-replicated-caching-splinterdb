@@ -68,9 +68,7 @@ replica::replica(const replica_config& config)
     smgr_ = cs_new<inmem_state_mgr>(server_id_, endpoint_);
 }
 
-replica::~replica() {
-    fclose(spl_log_file_);
-}
+replica::~replica() { fclose(spl_log_file_); }
 
 void replica::initialize() {
     raft_params params;
@@ -81,11 +79,11 @@ void replica::initialize() {
 
     asio_service::options asio_opt;
     asio_opt.thread_pool_size_ = config_.asio_thread_pool_size_;
-    asio_opt.worker_start_ = [this](uint32_t) {
+    asio_opt.worker_start_ = [](uint32_t) {
         // If we enable snapshotting, need to register threads with splinterdb.
         // splinterdb_register_thread(this->sm_->get_splinterdb_handle());
     };
-    asio_opt.worker_stop_ = [this](uint32_t) {
+    asio_opt.worker_stop_ = [](uint32_t) {
         // If we enable snapshotting, need to register threads with splinterdb.
         // splinterdb_deregister_thread(this->sm_->get_splinterdb_handle());
     };

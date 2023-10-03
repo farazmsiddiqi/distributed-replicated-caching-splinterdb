@@ -30,25 +30,24 @@ splinterdb_state_machine::~splinterdb_state_machine() {
 }
 
 ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
-    if (!commit_thread_initialized_) {
-        commit_thread_initialized_ = true;
+    bool expected = false;
+    if (commit_thread_initialized_.compare_exchange_strong(expected, true)) {
         splinterdb_register_thread(spl_handle_);
     }
 
-    splinterdb_operation operation;
+    splinterdb_operation operation = splinterdb_operation::deserialize(buf);
     slice key_slice, value_slice;
     int32_t ret_code;
 
-    splinterdb_operation::deserialize(buf, operation);
-    operation.key_.fill_slice(key_slice);
+    operation.key().fill_slice(key_slice);
 
-    switch (operation.type_) {
+    switch (operation.type()) {
         case splinterdb_operation::PUT:
-            operation.value_.value().fill_slice(value_slice);
+            operation.value().fill_slice(value_slice);
             ret_code = splinterdb_insert(spl_handle_, key_slice, value_slice);
             break;
         case splinterdb_operation::UPDATE:
-            operation.value_.value().fill_slice(value_slice);
+            operation.value().fill_slice(value_slice);
             ret_code = splinterdb_update(spl_handle_, key_slice, value_slice);
             break;
         case splinterdb_operation::DELETE:

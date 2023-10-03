@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
                 std::cout << "value: " << lookup->to_string() << std::endl;
             } else {
                 std::cout << "key " << std::quoted(tokens[1])
-                          << " not found: rc=" << lookup.unwrap_err() 
+                          << " not found: rc=" << lookup.unwrap_err()
                           << std::endl;
             }
         }

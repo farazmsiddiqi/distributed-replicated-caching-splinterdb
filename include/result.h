@@ -35,6 +35,7 @@ class Result {
             return std::forward<T>(default_value);
         }
     }
+
   private:
     std::variant<T, E> result_;
 };

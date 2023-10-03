@@ -61,7 +61,7 @@ class replica {
     replica_config config_;
 
     nuraft::ptr<SimpleLogger> logger_;
-    FILE *spl_log_file_;
+    FILE* spl_log_file_;
     nuraft::ptr<splinterdb_state_machine> sm_;
     nuraft::ptr<nuraft::state_mgr> smgr_;
     nuraft::raft_launcher launcher_;

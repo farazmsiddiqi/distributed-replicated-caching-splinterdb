@@ -26,19 +26,29 @@ ptr<buffer> splinterdb_operation::serialize() const {
     return buf;
 }
 
-void splinterdb_operation::deserialize(buffer& payload_in,
-                                       splinterdb_operation& operation_out) {
+splinterdb_operation::splinterdb_operation(owned_slice&& key,
+                                           std::optional<owned_slice>&& value,
+                                           splinterdb_operation_type type)
+    : key_(std::forward<owned_slice>(key)),
+      value_(std::forward<std::optional<owned_slice>>(value)),
+      type_(type) {}
+
+splinterdb_operation splinterdb_operation::deserialize(buffer& payload_in) {
     buffer_serializer bs(payload_in);
 
-    operation_out.type_ = static_cast<splinterdb_operation_type>(bs.get_u8());
-    owned_slice::deserialize(operation_out.key_, bs);
+    auto opty = static_cast<splinterdb_operation_type>(bs.get_u8());
+    owned_slice key_buf;
+    owned_slice::deserialize(key_buf, bs);
 
-    if (operation_out.type_ == splinterdb_operation::PUT ||
-        operation_out.type_ == splinterdb_operation::UPDATE) {
+    std::optional<owned_slice> value_buf;
+    if (opty == splinterdb_operation::PUT ||
+        opty == splinterdb_operation::UPDATE) {
         owned_slice value;
         owned_slice::deserialize(value, bs);
-        operation_out.value_ = std::move(value);
+        value_buf = std::move(value);
     }
+
+    return splinterdb_operation{std::move(key_buf), std::move(value_buf), opty};
 }
 
 splinterdb_operation splinterdb_operation::make_put(owned_slice&& key,

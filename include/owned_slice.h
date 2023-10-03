@@ -16,7 +16,7 @@ class owned_slice {
 
     owned_slice(const char* cstring);
 
-    owned_slice(const char* data, size_t length);
+    owned_slice(const void* data, size_t length);
 
     owned_slice(const slice& spl_slice);
 
@@ -29,10 +29,6 @@ class owned_slice {
     owned_slice(owned_slice&& other);
 
     owned_slice& operator=(owned_slice&& other);
-
-    static void alloc(owned_slice& slice_out, size_t length);
-
-    static void from_cstring(owned_slice& slice_out, const char* cstring);
 
     static void deserialize(owned_slice& slice_out,
                             nuraft::buffer_serializer& bs);
@@ -48,8 +44,12 @@ class owned_slice {
     std::string to_string() const;
 
   private:
-    uint64_t length;
-    const char* data;
+    uint64_t length_;
+    const char* data_;
+
+    explicit owned_slice(size_t length);
+
+    void free();
 };
 
 }  // namespace replicated_splinterdb
