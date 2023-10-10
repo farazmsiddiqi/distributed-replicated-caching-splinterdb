@@ -93,6 +93,14 @@ int main() {
     fruit = "Banana";
     key = slice_create((size_t)strlen(fruit), fruit);
     rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
+    rc = splinterdb_lookup(spl_handle, key, &result);
     rc = splinterdb_lookup_result_value(&result, &value);
     if (rc) {
         printf("Key: '%s' not found. (rc=%d)\n", fruit, rc);
@@ -109,6 +117,8 @@ int main() {
                DB_FILE_NAME, rc);
         return (rc);
     }
+
+    test_print(spl_handle);
 
     // Retrieve all the key-value pairs from the database
     printf(
