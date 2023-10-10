@@ -15,8 +15,9 @@ dev: dev-image
 		-v `pwd`/include:/work/include \
 		-v `pwd`/apps:/work/apps \
 		-v `pwd`/src:/work/src \
+		-v `pwd`/third-party/splinterdb:/work/splinterdb \
 		-v `pwd`/docker/CMakeLists.txt:/work/CMakeLists.txt \
-		-v `pwd`/docker/build:/work/build/build \
+		-v `pwd`/docker/build-dev:/work/build/build \
 		-v `pwd`/.cache:/cachepages \
 		$(IMAGE_BUILD_ENV)
 
@@ -42,3 +43,4 @@ format:
 
 submodules:
 	git submodule update --init --recursive
+	chmod +x docker/build*

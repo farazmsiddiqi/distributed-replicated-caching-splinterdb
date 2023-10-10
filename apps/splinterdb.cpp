@@ -19,7 +19,7 @@ extern "C" {
 
 #define DB_FILE_NAME "splinterdb_intro_db"
 #define DB_FILE_SIZE_MB 1024  // Size of SplinterDB device; Fixed when created
-#define CACHE_SIZE_MB 64      // Size of cache; can be changed across boots
+#define CACHE_SIZE_MB 32      // Size of cache; can be changed across boots
 
 /* Application declares the limit of key-sizes it intends to use */
 #define USER_MAX_KEY_SIZE ((int)100)
@@ -44,6 +44,9 @@ int main() {
     splinterdb_cfg.disk_size = (DB_FILE_SIZE_MB * 1024 * 1024);
     splinterdb_cfg.cache_size = (CACHE_SIZE_MB * 1024 * 1024);
     splinterdb_cfg.data_cfg = &splinter_data_cfg;
+
+    splinterdb_cfg.use_stats = true;
+    splinterdb_cfg.cache_use_stats = true;
 
     splinterdb *spl_handle = NULL;  // To a running SplinterDB instance
 
@@ -97,6 +100,7 @@ int main() {
     printf("\n");
 
     printf("Shutdown and reopen SplinterDB instance ...\n");
+    splinterdb_lookup_result_deinit(&result);
     splinterdb_close(&spl_handle);
 
     rc = splinterdb_open(&splinterdb_cfg, &spl_handle);
@@ -128,7 +132,22 @@ int main() {
 
     printf("Found %d key-value pairs\n\n", i);
 
-    splinterdb_print_cache_test(spl_handle);
+    splinterdb_lookup_result_init(spl_handle, &result, 0, NULL);
+
+    fruit = "Orange";
+    key = slice_create((size_t)strlen(fruit), fruit);
+    for (i = 0; i < 100; i++) {
+        rc = splinterdb_lookup(spl_handle, key, &result);
+    }
+    rc = splinterdb_lookup_result_value(&result, &value);
+    if (!rc) {
+        printf("Found key: '%s', value: '%.*s'\n", fruit,
+               (int)slice_length(value), (char *)slice_data(value));
+    }
+
+    splinterdb_print_cache(spl_handle);
+    splinterdb_stats_print_insertion(spl_handle);
+    splinterdb_stats_print_lookup(spl_handle);
 
     splinterdb_close(&spl_handle);
     printf("Shutdown SplinterDB instance, dbname '%s'.\n\n", DB_FILE_NAME);

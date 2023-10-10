@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -e
+
+bash -c "cd /work/splinterdb && make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}"
+
+cmake .. && make
+EXIT_CODE=$?
+
+echo "Build finished with code $EXIT_CODE"
+
+exit $EXIT_CODE

@@ -17,8 +17,4 @@ RUN cmake -DDISABLE_SSL=1 ../ \
     && mkdir -p ${LIBS_DIR} \
     && cp /work/nuraft/build/libnuraft* ${LIBS_DIR}
 
-COPY third-party/splinterdb /work/splinterdb
-WORKDIR /work/splinterdb
-RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
-
 WORKDIR /work/build
