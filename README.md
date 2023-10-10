@@ -10,10 +10,10 @@ You will need to restart the container if you make changes to the `libnuraft` an
 
 ## TODOs
 
-- [ ] implement state machine for splinterdb
+- [x] implement state machine for splinterdb
     - see [state machine example](third-party/nuraft/examples/calculator/calc_state_machine.hxx)
     - see [log store example](third-party/nuraft/examples/in_memory_log_store.hxx)
-    - [ ] state machine implementation
+    - [x] state machine implementation
     - [ ] log storage implementation
     - state machine and log will individually will invoke splinterdb API on different DB instances (see [splinterdb API](third-party/splinterdb/include))
 - [ ] create a API for server
@@ -30,4 +30,4 @@ You will need to restart the container if you make changes to the `libnuraft` an
     - [ ] delete 
     - [ ] dump cache
 - [ ] [LATER] YCSB binding to client API
-- [ ] [LATER] Examine cache and dump to file/stderr/stdout
+- [x] Examine cache and dump to file/stderr/stdout
