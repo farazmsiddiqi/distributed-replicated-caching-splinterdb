@@ -128,6 +128,8 @@ int main() {
 
     printf("Found %d key-value pairs\n\n", i);
 
+    splinterdb_print_cache_test(spl_handle);
+
     splinterdb_close(&spl_handle);
     printf("Shutdown SplinterDB instance, dbname '%s'.\n\n", DB_FILE_NAME);
 

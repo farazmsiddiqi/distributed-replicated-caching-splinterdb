@@ -36,7 +36,4 @@ ENV LD_LIBRARY_PATH ${LIBS_DIR}
 COPY --from=build /work/libs/*.so ${LIBS_DIR}
 COPY --from=build /work/build/apps /apps
 
-COPY scripts/ /apps/scripts/
-RUN chmod +x /apps/scripts/*
-
 WORKDIR /apps

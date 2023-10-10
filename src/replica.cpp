@@ -10,6 +10,7 @@ namespace replicated_splinterdb {
 
 using nuraft::asio_service;
 using nuraft::buffer;
+using nuraft::cmd_result_code;
 using nuraft::cs_new;
 using nuraft::inmem_state_mgr;
 using nuraft::ptr;
@@ -121,14 +122,13 @@ void replica::shutdown(size_t time_limit_sec) {
     launcher_.shutdown(time_limit_sec);
 }
 
-Result<owned_slice, int32_t> replica::read(slice&& key) {
+result_t<owned_slice, int32_t> replica::read(slice&& key) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,
                                   NULL);
 
     int rc = splinterdb_lookup(sm_->get_splinterdb_handle(),
                                std::forward<slice>(key), &result);
-
     if (rc) {
         return rc;
     }
@@ -142,20 +142,24 @@ Result<owned_slice, int32_t> replica::read(slice&& key) {
     return owned_slice(value);
 }
 
-void replica::add_server(int32_t server_id, const std::string& endpoint) {
+result_t<std::nullptr_t, std::pair<cmd_result_code, std::string>>
+replica::add_server(int32_t server_id, const std::string& endpoint) {
     srv_config srv_conf_to_add(server_id, endpoint);
-    add_server(srv_conf_to_add);
+    return add_server(srv_conf_to_add);
 }
 
-void replica::add_server(const srv_config& srv_conf_to_add) {
+result_t<std::nullptr_t, std::pair<cmd_result_code, std::string>>
+replica::add_server(const srv_config& srv_conf_to_add) {
     ptr<raft_result> ret = raft_instance_->add_srv(srv_conf_to_add);
     if (!ret->get_accepted()) {
         _s_err(logger_) << "failed to add server: " << ret->get_result_code();
-        return;
+        return std::make_pair(ret->get_result_code(), ret->get_result_str());
     }
 
     _s_info(logger_) << "add_server succeeded [id=" << srv_conf_to_add.get_id()
                      << ", endpoint=" << srv_conf_to_add.get_endpoint() << "]";
+
+    return nullptr;
 }
 
 void replica::append_log(const splinterdb_operation& operation,

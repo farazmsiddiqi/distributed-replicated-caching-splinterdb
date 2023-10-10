@@ -34,7 +34,16 @@ class replica {
 
     void initialize();
 
-    Result<owned_slice, int32_t> read(slice&& key);
+    result_t<owned_slice, int32_t> read(slice&& key);
+
+    result_t<std::nullptr_t, std::pair<nuraft::cmd_result_code, std::string>>
+    add_server(int32_t server_id, const std::string& endpoint);
+
+    result_t<std::nullptr_t, std::pair<nuraft::cmd_result_code, std::string>>
+    add_server(const nuraft::srv_config& config);
+
+    void append_log(const splinterdb_operation& operation,
+                    handle_commit_result handle_result);
 
     /**
      * Shutdown Raft server and ASIO service.
@@ -44,13 +53,6 @@ class replica {
      * @param time_limit_sec Waiting timeout in seconds.
      */
     void shutdown(size_t time_limit_sec);
-
-    void add_server(int32_t server_id, const std::string& endpoint);
-
-    void add_server(const nuraft::srv_config& config);
-
-    void append_log(const splinterdb_operation& operation,
-                    handle_commit_result handle_result);
 
   private:
     int server_id_;

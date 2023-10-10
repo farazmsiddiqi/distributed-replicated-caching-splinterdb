@@ -17,6 +17,7 @@ dev: dev-image
 		-v `pwd`/src:/work/src \
 		-v `pwd`/docker/CMakeLists.txt:/work/CMakeLists.txt \
 		-v `pwd`/docker/build:/work/build/build \
+		-v `pwd`/.cache:/cachepages \
 		$(IMAGE_BUILD_ENV)
 
 run: run-image
