@@ -7,3 +7,6 @@
 [submodule "third-party/YCSB-cpp"]
 	path = third-party/YCSB-cpp
 	url = https://github.com/dassl-uiuc/YCSB-cpp.git
+[submodule "third-party/rpclib"]
+	path = third-party/rpclib
+	url = https://github.com/rpclib/rpclib.git
