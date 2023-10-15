@@ -15,8 +15,12 @@ target_compile_definitions(replicated-splinterdb PRIVATE -DSPLINTERDB_PLATFORM_D
 # Users of our library will need this directory.
 target_include_directories(replicated-splinterdb PUBLIC "${ReplicatedSplinterDB_SOURCE_DIR}/include/")
 
-target_link_libraries(replicated-splinterdb nuraft)
-target_link_libraries(replicated-splinterdb splinterdb)
+link_directories(/work/libs)
+target_link_libraries(replicated-splinterdb nuraft rpc splinterdb)
+
+# target_link_libraries(replicated-splinterdb /work/libs/libnuraft.a)
+# target_link_libraries(replicated-splinterdb /work/libs/libsplinterdb.a)
+# target_link_libraries(replicated-splinterdb /work/libs/librpc.a)
 
 # All users of this library will need at least C++20
 target_compile_features(replicated-splinterdb PUBLIC cxx_std_20)

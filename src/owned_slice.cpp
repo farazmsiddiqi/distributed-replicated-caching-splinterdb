@@ -36,7 +36,6 @@ owned_slice::owned_slice(const char* cstring)
     : owned_slice(cstring, strlen(cstring)) {}
 
 owned_slice::owned_slice(owned_slice&& other) {
-    free();
     length_ = other.length_;
     data_ = other.data_;
 

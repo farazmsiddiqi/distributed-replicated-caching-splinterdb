@@ -2,7 +2,7 @@
 
 set -e
 
-bash -c "cd /work/splinterdb && make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}"
+bash -c "cd /work/splinterdb && make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR} ${LIBS_DIR}/libsplinterdb.so"
 
 cmake .. && make
 EXIT_CODE=$?

@@ -36,10 +36,10 @@ class replica {
 
     result_t<owned_slice, int32_t> read(slice&& key);
 
-    result_t<std::nullptr_t, std::pair<nuraft::cmd_result_code, std::string>>
+    std::pair<nuraft::cmd_result_code, std::string>
     add_server(int32_t server_id, const std::string& endpoint);
 
-    result_t<std::nullptr_t, std::pair<nuraft::cmd_result_code, std::string>>
+    std::pair<nuraft::cmd_result_code, std::string>
     add_server(const nuraft::srv_config& config);
 
     void append_log(const splinterdb_operation& operation,

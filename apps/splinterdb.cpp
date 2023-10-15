@@ -118,8 +118,6 @@ int main() {
         return (rc);
     }
 
-    test_print(spl_handle);
-
     // Retrieve all the key-value pairs from the database
     printf(
         "Iterate through all the key-value pairs"

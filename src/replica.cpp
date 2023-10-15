@@ -142,24 +142,24 @@ result_t<owned_slice, int32_t> replica::read(slice&& key) {
     return owned_slice(value);
 }
 
-result_t<std::nullptr_t, std::pair<cmd_result_code, std::string>>
+std::pair<cmd_result_code, std::string>
 replica::add_server(int32_t server_id, const std::string& endpoint) {
     srv_config srv_conf_to_add(server_id, endpoint);
     return add_server(srv_conf_to_add);
 }
 
-result_t<std::nullptr_t, std::pair<cmd_result_code, std::string>>
+std::pair<cmd_result_code, std::string>
 replica::add_server(const srv_config& srv_conf_to_add) {
     ptr<raft_result> ret = raft_instance_->add_srv(srv_conf_to_add);
     if (!ret->get_accepted()) {
         _s_err(logger_) << "failed to add server: " << ret->get_result_code();
-        return std::make_pair(ret->get_result_code(), ret->get_result_str());
+    } else {
+        _s_info(logger_) << "add_server succeeded [id="
+                         << srv_conf_to_add.get_id() << ", endpoint=" 
+                         << srv_conf_to_add.get_endpoint() << "]";
     }
 
-    _s_info(logger_) << "add_server succeeded [id=" << srv_conf_to_add.get_id()
-                     << ", endpoint=" << srv_conf_to_add.get_endpoint() << "]";
-
-    return nullptr;
+    return std::make_pair(ret->get_result_code(), ret->get_result_str());
 }
 
 void replica::append_log(const splinterdb_operation& operation,

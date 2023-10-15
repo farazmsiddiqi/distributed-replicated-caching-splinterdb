@@ -4,7 +4,6 @@
 #include "replica.h"
 #include "replica_config.h"
 #include "splinterdb_wrapper.h"
-#include "rpc/server.h"
 
 #define DB_FILE_SIZE_MB 1024  // Size of SplinterDB device; Fixed when created
 #define CACHE_SIZE_MB 64      // Size of cache; can be changed across boots
@@ -57,16 +56,12 @@ void handle_result(ptr<Timer> timer, replica::raft_result& result,
 }
 
 int main(int argc, char** argv) {
-    if (argc != 5) {
-        std::cerr << "Usage: " << argv[0] 
-                  << " <server id> <raft port> <rpc port>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <server id> <port>" << std::endl;
         return 1;
     }
 
-    int server_id         = std::atoi(argv[1]);
-    uint16_t raft_port    = std::atoi(argv[2]);
-    uint16_t client_port  = std::atoi(argv[3]);
-    uint16_t join_port    = std::atoi(argv[3]);
+    int server_id = std::atoi(argv[1]);
 
     // Initialize data configuration, using default key-comparison handling.
     data_config splinter_data_cfg;
@@ -92,14 +87,51 @@ int main(int argc, char** argv) {
     replica replica_instance{replica_cfg};
     replica_instance.initialize();
 
-    rpc::server client_srv(client_port);
-    rpc::server join_srv(join_port);
+    std::string prompt = "spl " + std::to_string(replica_cfg.server_id_) + "> ";
+    char cmd[1000];
 
-    // join_port.bind("get", [&replica_instance](const char* key) { return m.multiply(a, b); });
+    while (true) {
+#if defined(__linux__) || defined(__APPLE__)
+        std::cout << _CLM_GREEN << prompt << _CLM_END;
+#else
+        std::cout << prompt;
+#endif
+        if (!std::cin.getline(cmd, 1000)) {
+            break;
+        }
+        auto tokens(tokenize(cmd));
 
-    join_srv.bind("join", [&replica_instance](int32_t server_id, std::string endpoint) {
-        replica_instance.add_server(server_id, endpoint);
-    });
+        if (tokens[0] == "exit") {
+            break;
+        } else if (tokens[0] == "add") {
+            if (tokens.size() >= 3) {
+                replica_instance.add_server(std::atoi(tokens[1].c_str()),
+                                            tokens[2]);
+            }
+        } else if (tokens[0] == "put" && tokens.size() >= 3) {
+            replica_instance.append_log(
+                splinterdb_operation::make_put(tokens[1], tokens[2]),
+                handle_result);
+        } else if (tokens[0] == "update" && tokens.size() >= 3) {
+            replica_instance.append_log(
+                splinterdb_operation::make_update(tokens[1], tokens[2]),
+                handle_result);
+        } else if (tokens[0] == "delete" && tokens.size() >= 2) {
+            replica_instance.append_log(
+                splinterdb_operation::make_delete(tokens[1]), handle_result);
+        } else if (tokens[0] == "get" && tokens.size() >= 2) {
+            result_t<owned_slice, int32_t> lookup = replica_instance.read(
+                slice_create(tokens[1].size(), tokens[1].c_str()));
+
+            if (lookup.is_ok()) {
+                std::cout << "value: " << lookup->to_string() << std::endl;
+            } else {
+                std::cout << "key " << std::quoted(tokens[1])
+                          << " not found: rc=" << lookup.unwrap_err()
+                          << std::endl;
+            }
+        }
+    }
 
     return 0;
 }
