@@ -4,7 +4,7 @@
 #include <optional>
 
 #include "libnuraft/nuraft.hxx"
-#include "logger.h"
+#include "log_level.h"
 #include "splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {
@@ -21,8 +21,8 @@ struct replica_config {
           initialization_delay_ms_(250),
           initialization_retries_(20),
           raft_log_file_(std::nullopt),
-          log_level_(SimpleLogger::Levels::INFO),
-          display_level_(SimpleLogger::Levels::WARNING),
+          log_level_(LogLevel::INFO),
+          display_level_(LogLevel::WARNING),
           splinterdb_log_file_(std::nullopt),
           splinterdb_data_cfg_(splinterdb_data_cfg),
           splinterdb_cfg_(splinterdb_cfg) {
@@ -49,8 +49,8 @@ struct replica_config {
     // Logging information
 
     std::optional<std::string> raft_log_file_;
-    SimpleLogger::Levels log_level_;
-    SimpleLogger::Levels display_level_;
+    LogLevel log_level_;
+    LogLevel display_level_;
 
     std::optional<std::string> splinterdb_log_file_;
 
@@ -61,6 +61,8 @@ struct replica_config {
 
   private:
     replica_config() = delete;
+
+
 };
 
 }  // namespace replicated_splinterdb

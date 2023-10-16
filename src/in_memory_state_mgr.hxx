@@ -17,7 +17,15 @@ limitations under the License.
 
 #pragma once
 
+#define _USE_SPLINTERDB_LOG_STORE 1
+
+#ifdef _USE_SPLINTERDB_LOG_STORE
+#include "splinterdb_log_store.h"
+#define log_store_impl replicated_splinterdb::splinterdb_log_store
+#else
 #include "in_memory_log_store.h"
+#define log_store_impl inmem_log_store
+#endif
 
 #include "libnuraft/nuraft.hxx"
 
@@ -29,7 +37,7 @@ public:
                     const std::string& endpoint)
         : my_id_(srv_id)
         , my_endpoint_(endpoint)
-        , cur_log_store_( cs_new<inmem_log_store>() )
+        , cur_log_store_( cs_new<log_store_impl>() )
     {
         my_srv_config_ = cs_new<srv_config>( srv_id, endpoint );
 
@@ -82,7 +90,7 @@ public:
 private:
     int my_id_;
     std::string my_endpoint_;
-    ptr<inmem_log_store> cur_log_store_;
+    ptr<log_store_impl> cur_log_store_;
     ptr<srv_config> my_srv_config_;
     ptr<cluster_config> saved_config_;
     ptr<srv_state> saved_state_;

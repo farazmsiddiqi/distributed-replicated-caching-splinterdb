@@ -41,6 +41,7 @@ limitations under the License.
 
 #include "libnuraft/logger.hxx"
 #include "libnuraft/ptr.hxx"
+#include "log_level.h"
 
 // To suppress false alarms by thread sanitizer,
 // add -DSUPPRESS_TSAN_FALSE_ALARMS=1 flag to CXXFLAGS.
@@ -59,26 +60,26 @@ limitations under the License.
     if (l && l->getLogLevel() >= level) \
     (l)->put(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define _log_sys(l, ...) _log_(SimpleLogger::SYS, l, __VA_ARGS__)
-#define _log_fatal(l, ...) _log_(SimpleLogger::FATAL, l, __VA_ARGS__)
-#define _log_err(l, ...) _log_(SimpleLogger::ERROR, l, __VA_ARGS__)
-#define _log_warn(l, ...) _log_(SimpleLogger::WARNING, l, __VA_ARGS__)
-#define _log_info(l, ...) _log_(SimpleLogger::INFO, l, __VA_ARGS__)
-#define _log_debug(l, ...) _log_(SimpleLogger::DEBUG, l, __VA_ARGS__)
-#define _log_trace(l, ...) _log_(SimpleLogger::TRACE, l, __VA_ARGS__)
+#define _log_sys(l, ...) _log_(replicated_splinterdb::LogLevel::SYS, l, __VA_ARGS__)
+#define _log_fatal(l, ...) _log_(replicated_splinterdb::LogLevel::FATAL, l, __VA_ARGS__)
+#define _log_err(l, ...) _log_(replicated_splinterdb::LogLevel::ERROR, l, __VA_ARGS__)
+#define _log_warn(l, ...) _log_(replicated_splinterdb::LogLevel::WARNING, l, __VA_ARGS__)
+#define _log_info(l, ...) _log_(replicated_splinterdb::LogLevel::INFO, l, __VA_ARGS__)
+#define _log_debug(l, ...) _log_(replicated_splinterdb::LogLevel::DEBUG, l, __VA_ARGS__)
+#define _log_trace(l, ...) _log_(replicated_splinterdb::LogLevel::TRACE, l, __VA_ARGS__)
 
 // stream log macro
 #define _stream_(level, l)              \
     if (l && l->getLogLevel() >= level) \
     l->eos() = l->stream(level, l, __FILE__, __func__, __LINE__)
 
-#define _s_sys(l) _stream_(SimpleLogger::SYS, l)
-#define _s_fatal(l) _stream_(SimpleLogger::FATAL, l)
-#define _s_err(l) _stream_(SimpleLogger::ERROR, l)
-#define _s_warn(l) _stream_(SimpleLogger::WARNING, l)
-#define _s_info(l) _stream_(SimpleLogger::INFO, l)
-#define _s_debug(l) _stream_(SimpleLogger::DEBUG, l)
-#define _s_trace(l) _stream_(SimpleLogger::TRACE, l)
+#define _s_sys(l) _stream_(replicated_splinterdb::LogLevel::SYS, l)
+#define _s_fatal(l) _stream_(replicated_splinterdb::LogLevel::FATAL, l)
+#define _s_err(l) _stream_(replicated_splinterdb::LogLevel::ERROR, l)
+#define _s_warn(l) _stream_(replicated_splinterdb::LogLevel::WARNING, l)
+#define _s_info(l) _stream_(replicated_splinterdb::LogLevel::INFO, l)
+#define _s_debug(l) _stream_(replicated_splinterdb::LogLevel::DEBUG, l)
+#define _s_trace(l) _stream_(replicated_splinterdb::LogLevel::TRACE, l)
 
 // Do printf style log, but print logs in `lv1` level during normal time,
 // once in given `interval_ms` interval, print a log in `lv2` level.
@@ -188,18 +189,6 @@ class SimpleLogger : public nuraft::logger {
   public:
     static const int MSG_SIZE = 4096;
     static const std::memory_order MOR = std::memory_order_relaxed;
-
-    enum Levels {
-        DISABLED = -1,
-        SYS = 0,
-        FATAL = 1,
-        ERROR = 2,
-        WARNING = 3,
-        INFO = 4,
-        DEBUG = 5,
-        TRACE = 6,
-        UNKNOWN = 99,
-    };
 
     class LoggerStream : public std::ostream {
       public:

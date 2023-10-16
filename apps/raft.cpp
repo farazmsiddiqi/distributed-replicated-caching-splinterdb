@@ -15,6 +15,7 @@
 using nuraft::buffer;
 using nuraft::cmd_result_code;
 using nuraft::ptr;
+using replicated_splinterdb::LogLevel;
 using replicated_splinterdb::owned_slice;
 using replicated_splinterdb::replica;
 using replicated_splinterdb::replica_config;
@@ -86,8 +87,8 @@ int main(int argc, char** argv) {
     replica_cfg.addr_ = "localhost";
     replica_cfg.port_ = std::atoi(argv[2]);
 
-    replica_cfg.log_level_ = SimpleLogger::TRACE;
-    replica_cfg.display_level_ = SimpleLogger::DISABLED;
+    replica_cfg.log_level_ = LogLevel::TRACE;
+    replica_cfg.display_level_ = LogLevel::DISABLED;
 
     replica replica_instance{replica_cfg};
     replica_instance.initialize();

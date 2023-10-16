@@ -2,7 +2,6 @@
 #define REPLICATED_SPLINTERDB_REPLICA_H
 
 #include "libnuraft/nuraft.hxx"
-#include "logger.h"
 #include "owned_slice.h"
 #include "replica_config.h"
 #include "result.h"
@@ -62,7 +61,7 @@ class replica {
 
     replica_config config_;
 
-    nuraft::ptr<SimpleLogger> logger_;
+    nuraft::ptr<nuraft::logger> logger_;
     FILE* spl_log_file_;
     nuraft::ptr<splinterdb_state_machine> sm_;
     nuraft::ptr<nuraft::state_mgr> smgr_;

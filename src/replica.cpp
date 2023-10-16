@@ -5,6 +5,11 @@
 #include "in_memory_state_mgr.hxx"
 #include "splinterdb_state_machine.h"
 #include "splinterdb_wrapper.h"
+#include "logger.h"
+
+#define s_err  _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
+#define s_info _s_info(std::dynamic_pointer_cast<SimpleLogger>(logger_))
+#define s_warn _s_warn(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 
 namespace replicated_splinterdb {
 
@@ -51,11 +56,13 @@ replica::replica(const replica_config& config)
     // Set up Raft logging
     std::string raft_log_file_name = config_.raft_log_file_.value_or(
         "./srv-" + std::to_string(server_id_) + ".log");
-    logger_ = cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
-    logger_->setLogLevel(config_.log_level_);
-    logger_->setDispLevel(config_.display_level_);
-    logger_->setCrashDumpPath("./", true);
-    logger_->start();
+    nuraft::ptr<SimpleLogger> log = cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
+    log->setLogLevel(config_.log_level_);
+    log->setDispLevel(config_.display_level_);
+    log->setCrashDumpPath("./", true);
+    log->start();
+
+    logger_ = log;
 
     // Set up SplinterDB logging
     std::string spl_log_file_name = config_.splinterdb_log_file_.value_or(
@@ -152,11 +159,10 @@ std::pair<cmd_result_code, std::string>
 replica::add_server(const srv_config& srv_conf_to_add) {
     ptr<raft_result> ret = raft_instance_->add_srv(srv_conf_to_add);
     if (!ret->get_accepted()) {
-        _s_err(logger_) << "failed to add server: " << ret->get_result_code();
+        s_err << "failed to add server: " << ret->get_result_code();
     } else {
-        _s_info(logger_) << "add_server succeeded [id="
-                         << srv_conf_to_add.get_id() << ", endpoint=" 
-                         << srv_conf_to_add.get_endpoint() << "]";
+        s_info << "add_server succeeded [id=" << srv_conf_to_add.get_id()
+               << ", endpoint=" << srv_conf_to_add.get_endpoint() << "]";
     }
 
     return std::make_pair(ret->get_result_code(), ret->get_result_str());
@@ -170,8 +176,8 @@ void replica::append_log(const splinterdb_operation& operation,
 
     if (!ret->get_accepted()) {
         // Log append rejected, usually because this node is not a leader.
-        _s_warn(logger_) << "failed to append log: " << ret->get_result_code()
-                         << " (" << usToString(timer->getTimeUs()) << ")";
+        s_warn << "failed to append log: " << ret->get_result_code() << " ("
+               << usToString(timer->getTimeUs()) << ")";
         return;
     }
 
