@@ -180,6 +180,8 @@ class splinterdb_state_machine : public nuraft::state_machine {
   private:
     splinterdb* spl_handle_;
 
+    const splinterdb_config* spl_cfg_;
+
     // Last committed Raft log number.
     std::atomic<uint64_t> last_committed_idx_;
 

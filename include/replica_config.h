@@ -61,8 +61,6 @@ struct replica_config {
 
   private:
     replica_config() = delete;
-
-
 };
 
 }  // namespace replicated_splinterdb

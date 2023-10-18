@@ -3,9 +3,9 @@
 #include <iostream>
 
 #include "in_memory_state_mgr.hxx"
+#include "logger.h"
 #include "splinterdb_state_machine.h"
 #include "splinterdb_wrapper.h"
-#include "logger.h"
 
 #define s_err  _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 #define s_info _s_info(std::dynamic_pointer_cast<SimpleLogger>(logger_))
@@ -56,7 +56,8 @@ replica::replica(const replica_config& config)
     // Set up Raft logging
     std::string raft_log_file_name = config_.raft_log_file_.value_or(
         "./srv-" + std::to_string(server_id_) + ".log");
-    nuraft::ptr<SimpleLogger> log = cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
+    nuraft::ptr<SimpleLogger> log =
+        cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
     log->setLogLevel(config_.log_level_);
     log->setDispLevel(config_.display_level_);
     log->setCrashDumpPath("./", true);
@@ -87,13 +88,21 @@ void replica::initialize() {
 
     asio_service::options asio_opt;
     asio_opt.thread_pool_size_ = config_.asio_thread_pool_size_;
-    asio_opt.worker_start_ = [](uint32_t) {
-        // If we enable snapshotting, need to register threads with splinterdb.
-        // splinterdb_register_thread(this->sm_->get_splinterdb_handle());
+    asio_opt.worker_start_ = [this](uint32_t) {
+        std::cout << "starting thread" << std::endl;
+#if _USE_SPLINTERDB_LOG_STORE
+        ptr<inmem_state_mgr> mgr =
+            std::dynamic_pointer_cast<inmem_state_mgr>(smgr_);
+        splinterdb_register_thread(mgr->get_splinterdb_handle());
+#endif
     };
-    asio_opt.worker_stop_ = [](uint32_t) {
-        // If we enable snapshotting, need to register threads with splinterdb.
-        // splinterdb_deregister_thread(this->sm_->get_splinterdb_handle());
+    asio_opt.worker_stop_ = [this](uint32_t) {
+        std::cout << "stopping thread" << std::endl;
+#if _USE_SPLINTERDB_LOG_STORE
+        ptr<inmem_state_mgr> mgr =
+            std::dynamic_pointer_cast<inmem_state_mgr>(smgr_);
+        splinterdb_deregister_thread(mgr->get_splinterdb_handle());
+#endif
     };
 
     raft_instance_ =
@@ -149,14 +158,14 @@ result_t<owned_slice, int32_t> replica::read(slice&& key) {
     return owned_slice(value);
 }
 
-std::pair<cmd_result_code, std::string>
-replica::add_server(int32_t server_id, const std::string& endpoint) {
+std::pair<cmd_result_code, std::string> replica::add_server(
+    int32_t server_id, const std::string& endpoint) {
     srv_config srv_conf_to_add(server_id, endpoint);
     return add_server(srv_conf_to_add);
 }
 
-std::pair<cmd_result_code, std::string>
-replica::add_server(const srv_config& srv_conf_to_add) {
+std::pair<cmd_result_code, std::string> replica::add_server(
+    const srv_config& srv_conf_to_add) {
     ptr<raft_result> ret = raft_instance_->add_srv(srv_conf_to_add);
     if (!ret->get_accepted()) {
         s_err << "failed to add server: " << ret->get_result_code();

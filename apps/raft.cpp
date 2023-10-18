@@ -3,8 +3,8 @@
 
 #include "replica.h"
 #include "replica_config.h"
-#include "splinterdb_wrapper.h"
 #include "rpc/server.h"
+#include "splinterdb_wrapper.h"
 
 #define DB_FILE_SIZE_MB 1024  // Size of SplinterDB device; Fixed when created
 #define CACHE_SIZE_MB 64      // Size of cache; can be changed across boots
@@ -59,15 +59,15 @@ void handle_result(ptr<Timer> timer, replica::raft_result& result,
 
 int main(int argc, char** argv) {
     if (argc != 5) {
-        std::cerr << "Usage: " << argv[0] 
+        std::cerr << "Usage: " << argv[0]
                   << " <server id> <raft port> <rpc port>" << std::endl;
         return 1;
     }
 
-    int server_id         = std::atoi(argv[1]);
-    uint16_t raft_port    = std::atoi(argv[2]);
-    uint16_t client_port  = std::atoi(argv[3]);
-    uint16_t join_port    = std::atoi(argv[3]);
+    int server_id = std::atoi(argv[1]);
+    uint16_t raft_port = std::atoi(argv[2]);
+    uint16_t client_port = std::atoi(argv[3]);
+    uint16_t join_port = std::atoi(argv[3]);
 
     // Initialize data configuration, using default key-comparison handling.
     data_config splinter_data_cfg;
@@ -96,11 +96,13 @@ int main(int argc, char** argv) {
     rpc::server client_srv(client_port);
     rpc::server join_srv(join_port);
 
-    // join_port.bind("get", [&replica_instance](const char* key) { return m.multiply(a, b); });
+    // join_port.bind("get", [&replica_instance](const char* key) { return
+    // m.multiply(a, b); });
 
-    join_srv.bind("join", [&replica_instance](int32_t server_id, std::string endpoint) {
-        replica_instance.add_server(server_id, endpoint);
-    });
+    join_srv.bind("join",
+                  [&replica_instance](int32_t server_id, std::string endpoint) {
+                      replica_instance.add_server(server_id, endpoint);
+                  });
 
     return 0;
 }

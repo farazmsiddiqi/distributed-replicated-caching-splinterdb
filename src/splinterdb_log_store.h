@@ -9,14 +9,13 @@
 #include "libnuraft/log_store.hxx"
 #include "splinterdb_wrapper.h"
 
-
 namespace replicated_splinterdb {
 
-int log_key_compare(const data_config *cfg, slice key1, slice key2);
+extern "C" int log_key_compare(const data_config* cfg, slice key1, slice key2);
 
 class splinterdb_log_store : public nuraft::log_store {
   public:
-    splinterdb_log_store(const char* file_name = "log.db",
+    splinterdb_log_store(const std::string& file_name = "log.db",
                          uint64_t disk_size = 1024 * 1024 * 1024,
                          uint64_t cache_size = 64 * 1024 * 1024);
 
@@ -64,20 +63,21 @@ class splinterdb_log_store : public nuraft::log_store {
      * @param index Log index number to overwrite.
      * @param entry New log entry to overwrite.
      */
-    void write_at(uint64_t index, nuraft::ptr<nuraft::log_entry>& entry) override;
+    void write_at(uint64_t index,
+                  nuraft::ptr<nuraft::log_entry>& entry) override;
 
     /**
      * Get log entries with index [start, end).
      *
-     * Return nullptr to indicate error if any log entry within the requested range
-     * could not be retrieved (e.g. due to external log truncation).
+     * Return nullptr to indicate error if any log entry within the requested
+     * range could not be retrieved (e.g. due to external log truncation).
      *
      * @param start The start log index number (inclusive).
      * @param end The end log index number (exclusive).
      * @return The log entries between [start, end).
      */
-    nuraft::ptr<std::vector<nuraft::ptr<nuraft::log_entry>>>
-    log_entries(uint64_t start, uint64_t end) override;
+    nuraft::ptr<std::vector<nuraft::ptr<nuraft::log_entry>>> log_entries(
+        uint64_t start, uint64_t end) override;
 
     /**
      * Get the log entry at the specified log index number.
@@ -121,18 +121,22 @@ class splinterdb_log_store : public nuraft::log_store {
      * If current maximum log index is smaller than given `last_log_index`,
      * set start log index to `last_log_index + 1`.
      *
-     * @param last_log_index Log index number that will be purged up to (inclusive).
+     * @param last_log_index Log index number that will be purged up to
+     * (inclusive).
      * @return `true` on success.
      */
     bool compact(uint64_t last_log_index) override;
 
     /**
-     * Synchronously flush all log entries in this log store to the backing storage
-     * so that all log entries are guaranteed to be durable upon process crash.
+     * Synchronously flush all log entries in this log store to the backing
+     * storage so that all log entries are guaranteed to be durable upon process
+     * crash.
      *
      * @return `true` on success.
      */
     bool flush() override;
+
+    splinterdb* get_splinterdb_handle() { return spl_; }
 
   private:
     splinterdb* spl_;

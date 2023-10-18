@@ -2,6 +2,9 @@
 
 #include <cstring>
 #include <numeric>
+#include <iostream>
+
+#include "splinterdb_operation.h"
 
 namespace replicated_splinterdb {
 
@@ -9,9 +12,9 @@ using nuraft::buffer;
 using nuraft::log_entry;
 using nuraft::ptr;
 
-int log_key_compare(const data_config *cfg, slice key1, slice key2) {
-    uint64_t idx1 = *(uint64_t *)slice_data(key1);
-    uint64_t idx2 = *(uint64_t *)slice_data(key2);
+extern "C" int log_key_compare(const data_config* cfg, slice key1, slice key2) {
+    uint64_t idx1 = *(uint64_t*)slice_data(key1);
+    uint64_t idx2 = *(uint64_t*)slice_data(key2);
 
     if (idx1 > idx2) {
         return 1;
@@ -28,21 +31,19 @@ static slice log_key_create(const uint64_t& index) {
 
 static ptr<buffer> slice_to_buffer(const slice& value) {
     ptr<buffer> buf = buffer::alloc(slice_length(value));
-    buf->put(static_cast<const char*>(slice_data(value)), slice_length(value));
+    buf->put_raw(reinterpret_cast<const nuraft::byte*>(slice_data(value)), slice_length(value));
     return buf;
 }
 
-splinterdb_log_store::splinterdb_log_store(const char* file_name,
+splinterdb_log_store::splinterdb_log_store(const std::string& file_name,
                                            uint64_t disk_size,
-                                           uint64_t cache_size) 
-    : spl_(nullptr),
-      start_idx_(1),
-      last_idx_(0) {
+                                           uint64_t cache_size)
+    : spl_(nullptr), start_idx_(1), last_idx_(0) {
     default_data_config_init(sizeof(uint64_t), &splinter_data_cfg_);
     splinter_data_cfg_.key_compare = log_key_compare;
 
     memset(&splinterdb_cfg_, 0, sizeof(splinterdb_cfg_));
-    splinterdb_cfg_.filename = file_name;
+    splinterdb_cfg_.filename = file_name.c_str();
     splinterdb_cfg_.disk_size = disk_size;
     splinterdb_cfg_.cache_size = cache_size;
     splinterdb_cfg_.data_cfg = &splinter_data_cfg_;
@@ -53,17 +54,11 @@ splinterdb_log_store::splinterdb_log_store(const char* file_name,
     }
 }
 
-splinterdb_log_store::~splinterdb_log_store() {
-    splinterdb_close(&spl_);
-}
+splinterdb_log_store::~splinterdb_log_store() { splinterdb_close(&spl_); }
 
-uint64_t splinterdb_log_store::next_slot() const {
-    return last_idx_ + 1;
-}
+uint64_t splinterdb_log_store::next_slot() const { return last_idx_ + 1; }
 
-uint64_t splinterdb_log_store::start_index() const {
-    return start_idx_;
-}
+uint64_t splinterdb_log_store::start_index() const { return start_idx_; }
 
 ptr<log_entry> splinterdb_log_store::last_entry() const {
     splinterdb_lookup_result result;
@@ -86,14 +81,12 @@ ptr<log_entry> splinterdb_log_store::last_entry() const {
 
 uint64_t splinterdb_log_store::append(ptr<log_entry>& entry) {
     uint64_t index = last_idx_++;
-    slice serialized_log;
+    slice key = log_key_create(index);
 
-    {
-        ptr<buffer> buf = entry->serialize();
-        serialized_log = slice_create(buf->size(), buf->data());
-    }
+    ptr<buffer> buf = entry->serialize();
+    slice serialized_log = slice_create(buf->size(), buf->data_begin());
 
-    int rc = splinterdb_insert(spl_, log_key_create(index), serialized_log);
+    int rc = splinterdb_insert(spl_, key, serialized_log);
     if (rc != 0) {
         throw std::runtime_error("Failed to append log entry");
     }
@@ -105,6 +98,8 @@ void splinterdb_log_store::write_at(uint64_t index, ptr<log_entry>& entry) {
     uint64_t old_last_idx = last_idx_;
     last_idx_ = index - 1;
 
+    std::cout << "Writing log entry at index " << index << std::endl;
+
     std::vector<uint64_t> to_delete(old_last_idx - index + 1);
     std::iota(std::begin(to_delete), std::end(to_delete), index);
 
@@ -115,9 +110,9 @@ void splinterdb_log_store::write_at(uint64_t index, ptr<log_entry>& entry) {
     append(entry);
 }
 
-ptr<std::vector<ptr<log_entry>>> 
-splinterdb_log_store::log_entries(uint64_t start, uint64_t end) {
-    ptr<std::vector<ptr<log_entry>>> ret = 
+ptr<std::vector<ptr<log_entry>>> splinterdb_log_store::log_entries(
+    uint64_t start, uint64_t end) {
+    ptr<std::vector<ptr<log_entry>>> ret =
         nuraft::cs_new<std::vector<ptr<log_entry>>>();
 
     ret->resize(end - start);
@@ -148,7 +143,10 @@ ptr<log_entry> splinterdb_log_store::entry_at(uint64_t index) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(spl_, &result, 0, NULL);
 
-    int rc = splinterdb_lookup(spl_, log_key_create(index), &result);
+    std::cout << "Get log entry at index " << index << std::endl;
+    slice key = log_key_create(index);
+
+    int rc = splinterdb_lookup(spl_, key, &result);
     if (rc == 0) {
         slice value;
         rc = splinterdb_lookup_result_value(&result, &value);
@@ -205,10 +203,10 @@ ptr<buffer> splinterdb_log_store::pack(uint64_t index, int32_t signed_cnt) {
         buffer::alloc(sizeof(int32_t) + cnt * sizeof(int32_t) + size_total);
 
     ret->pos(0);
-    ret->put((int32_t) signed_cnt);
+    ret->put((int32_t)signed_cnt);
 
-    for (const auto &buf : logs) {
-        ret->put((int32_t) buf->size());
+    for (const auto& buf : logs) {
+        ret->put((int32_t)buf->size());
         ret->put(*buf);
     }
 
@@ -234,8 +232,8 @@ void splinterdb_log_store::apply_pack(uint64_t index, buffer& pack) {
         ptr<buffer> buf = buffer::alloc(static_cast<size_t>(size));
         pack.get(buf);
 
-        int rc = splinterdb_insert(spl_, log_key_create(cur_index), 
-                                   slice_create(buf->size(), buf->data()));
+        int rc = splinterdb_insert(spl_, log_key_create(cur_index),
+                                   slice_create(buf->size(), buf->data_begin()));
         if (rc != 0) {
             throw std::runtime_error("Failed to append log entry at index " +
                                      std::to_string(cur_index));
@@ -259,8 +257,6 @@ bool splinterdb_log_store::compact(uint64_t last_log_index) {
     return true;
 }
 
-bool splinterdb_log_store::flush() {
-    return true;
-}
+bool splinterdb_log_store::flush() { return true; }
 
 }  // namespace replicated_splinterdb

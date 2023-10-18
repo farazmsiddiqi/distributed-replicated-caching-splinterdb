@@ -5,7 +5,7 @@ project(ReplicatedSplinterDB
         DESCRIPTION "Replicating SplinterDB with Raft"
         LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Let's ensure -std=c++xx instead of -std=g++xx
 set(CMAKE_CXX_EXTENSIONS OFF)

@@ -17,9 +17,9 @@ limitations under the License.
 
 #pragma once
 
-#define _USE_SPLINTERDB_LOG_STORE 1
+#define _USE_SPLINTERDB_LOG_STORE 0
 
-#ifdef _USE_SPLINTERDB_LOG_STORE
+#if _USE_SPLINTERDB_LOG_STORE
 #include "splinterdb_log_store.h"
 #define log_store_impl replicated_splinterdb::splinterdb_log_store
 #else
@@ -37,7 +37,11 @@ public:
                     const std::string& endpoint)
         : my_id_(srv_id)
         , my_endpoint_(endpoint)
-        , cur_log_store_( cs_new<log_store_impl>() )
+#if _USE_SPLINTERDB_LOG_STORE
+        , cur_log_store_( cs_new<log_store_impl>("log" + std::to_string(srv_id) + ".db") )
+#else
+        , cur_log_store_( cs_new<inmem_log_store>() )
+#endif
     {
         my_srv_config_ = cs_new<srv_config>( srv_id, endpoint );
 
@@ -86,6 +90,10 @@ public:
     }
 
     ptr<srv_config> get_srv_config() const { return my_srv_config_; }
+
+#if _USE_SPLINTERDB_LOG_STORE
+    splinterdb* get_splinterdb_handle() { return cur_log_store_->get_splinterdb_handle(); }
+#endif
 
 private:
     int my_id_;

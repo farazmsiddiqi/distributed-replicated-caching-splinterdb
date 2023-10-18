@@ -14,4 +14,4 @@ enum LogLevel {
     UNKNOWN = 99,
 };
 
-} // namespace replicated_splinterdb
+}  // namespace replicated_splinterdb

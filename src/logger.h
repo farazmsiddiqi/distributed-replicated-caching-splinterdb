@@ -60,13 +60,20 @@ limitations under the License.
     if (l && l->getLogLevel() >= level) \
     (l)->put(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-#define _log_sys(l, ...) _log_(replicated_splinterdb::LogLevel::SYS, l, __VA_ARGS__)
-#define _log_fatal(l, ...) _log_(replicated_splinterdb::LogLevel::FATAL, l, __VA_ARGS__)
-#define _log_err(l, ...) _log_(replicated_splinterdb::LogLevel::ERROR, l, __VA_ARGS__)
-#define _log_warn(l, ...) _log_(replicated_splinterdb::LogLevel::WARNING, l, __VA_ARGS__)
-#define _log_info(l, ...) _log_(replicated_splinterdb::LogLevel::INFO, l, __VA_ARGS__)
-#define _log_debug(l, ...) _log_(replicated_splinterdb::LogLevel::DEBUG, l, __VA_ARGS__)
-#define _log_trace(l, ...) _log_(replicated_splinterdb::LogLevel::TRACE, l, __VA_ARGS__)
+#define _log_sys(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::SYS, l, __VA_ARGS__)
+#define _log_fatal(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::FATAL, l, __VA_ARGS__)
+#define _log_err(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::ERROR, l, __VA_ARGS__)
+#define _log_warn(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::WARNING, l, __VA_ARGS__)
+#define _log_info(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::INFO, l, __VA_ARGS__)
+#define _log_debug(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::DEBUG, l, __VA_ARGS__)
+#define _log_trace(l, ...) \
+    _log_(replicated_splinterdb::LogLevel::TRACE, l, __VA_ARGS__)
 
 // stream log macro
 #define _stream_(level, l)              \
