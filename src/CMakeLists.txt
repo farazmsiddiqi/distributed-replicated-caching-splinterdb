@@ -11,13 +11,19 @@ file(GLOB SOURCE_LIST CONFIGURE_DEPENDS
 # Make an automatic library - will be static or dynamic based on user setting
 add_library(replicated-splinterdb ${SOURCE_LIST} ${HEADER_LIST})
 target_compile_definitions(replicated-splinterdb PRIVATE -DSPLINTERDB_PLATFORM_DIR=platform_linux)
+target_compile_options(
+    replicated-splinterdb PRIVATE
+    -Wall -Wpedantic -Wextra -Wshadow -Wno-unused-parameter
+    -Wpointer-arith -Wcast-align -Wwrite-strings -Wredundant-decls 
+    -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline
+    -Wuninitialized -Wconversion -Wstrict-prototypes -Wno-gcc-compat
+    -felide-constructors
+)
 
 # Users of our library will need this directory.
 target_include_directories(replicated-splinterdb PUBLIC "${ReplicatedSplinterDB_SOURCE_DIR}/include/")
 
-link_directories(/work/libs)
-target_link_libraries(replicated-splinterdb nuraft rpc splinterdb)
+target_link_libraries(replicated-splinterdb nuraft.a rpc splinterdb pthread)
 
 # All users of this library will need at least C++20
 target_compile_features(replicated-splinterdb PUBLIC cxx_std_20)
-target_compile_options(replicated-splinterdb PRIVATE -O2)

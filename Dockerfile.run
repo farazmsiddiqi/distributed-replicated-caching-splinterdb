@@ -11,18 +11,7 @@ ENV LIBS_DIR /work/libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
 COPY third-party/nuraft /work/nuraft
-WORKDIR /work/nuraft/build
-RUN cmake -DDISABLE_SSL=1 ../ \
-    && make \
-    && mkdir -p ${LIBS_DIR} \
-    && cp /work/nuraft/build/libnuraft* ${LIBS_DIR}
-
 COPY third-party/rpclib /work/rpclib
-WORKDIR /work/rpclib/build
-RUN cmake ../ \
-    && make \
-    && cp /work/rpclib/build/librpc.a ${LIBS_DIR}
-
 COPY third-party/splinterdb /work/splinterdb
 WORKDIR /work/splinterdb
 RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
@@ -32,7 +21,7 @@ COPY include /work/include
 COPY apps /work/apps
 COPY src /work/src
 COPY docker/CMakeLists.txt /work/CMakeLists.txt
-RUN cmake .. && make
+RUN cmake -DDISABLE_SSL=1 .. && make
 
 FROM --platform=arm64 neilk3/splinterdb-run-env as run
 

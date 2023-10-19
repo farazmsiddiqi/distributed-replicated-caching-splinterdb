@@ -11,16 +11,6 @@ ENV LIBS_DIR /work/libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
 COPY third-party/nuraft /work/nuraft
-WORKDIR /work/nuraft/build
-RUN cmake -DDISABLE_SSL=1 ../ \
-    && make \
-    && mkdir -p ${LIBS_DIR} \
-    && cp /work/nuraft/build/libnuraft.a ${LIBS_DIR}
-
 COPY third-party/rpclib /work/rpclib
-WORKDIR /work/rpclib/build
-RUN cmake ../ \
-    && make \
-    && cp /work/rpclib/build/librpc.a ${LIBS_DIR}
 
 WORKDIR /work/build

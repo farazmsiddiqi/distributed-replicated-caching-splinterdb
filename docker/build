@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cmake .. && make
+cmake -DDISABLE_SSL=1 .. && make
 EXIT_CODE=$?
 
 echo "Build finished with code $EXIT_CODE"
