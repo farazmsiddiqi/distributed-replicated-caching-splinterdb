@@ -1,7 +1,7 @@
 FROM --platform=arm64 neilk3/splinterdb-build-env as build
 
 RUN apt-get update -y \
-    && apt-get install -y cmake zlib1g-dev \
+    && apt-get install -y cmake zlib1g-dev libgflags-dev \
     && apt-get clean
 
 ENV CC clang
@@ -39,7 +39,11 @@ FROM --platform=arm64 neilk3/splinterdb-run-env as run
 ENV LIBS_DIR /libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
-COPY --from=build /work/libs/*.a /work/libs/libsplinterdb.so ${LIBS_DIR}
+RUN apt-get update -y \
+    && apt-get install -y libgflags2.2 \
+    && apt-get clean
+
+COPY --from=build /work/libs/libsplinterdb.so ${LIBS_DIR}
 COPY --from=build /work/build/apps /apps
 
 WORKDIR /apps
