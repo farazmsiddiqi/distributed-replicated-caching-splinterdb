@@ -26,6 +26,10 @@ class owned_slice {
 
     owned_slice& operator=(const owned_slice&) = delete;
 
+    owned_slice(owned_slice&& other) noexcept = default;
+
+    owned_slice& operator=(owned_slice&& other) noexcept = default;
+
     static void deserialize(owned_slice& slice_out,
                             nuraft::buffer_serializer& bs);
 

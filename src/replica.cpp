@@ -22,7 +22,7 @@ using nuraft::ptr;
 using nuraft::raft_params;
 using nuraft::srv_config;
 
-void default_raft_params_init(raft_params& params) {
+void replica::default_raft_params_init(raft_params& params) {
     // heartbeat: 100 ms, election timeout: 200 - 400 ms.
     params.heart_beat_interval_ = 100;
     params.election_timeout_lower_bound_ = 200;
@@ -75,6 +75,8 @@ replica::replica(const replica_config& config)
     sm_ = cs_new<splinterdb_state_machine>(config_.splinterdb_cfg_,
                                            config_.snapshot_frequency_ <= 0);
     smgr_ = cs_new<inmem_state_mgr>(server_id_, endpoint_);
+
+    initialize();
 }
 
 replica::~replica() { fclose(spl_log_file_); }
@@ -196,18 +198,10 @@ void replica::append_log(const splinterdb_operation& operation,
     }
 }
 
-ptr<replica::raft_result> replica::append_log(
-    const splinterdb_operation& operation) {
-    ptr<buffer> new_log(operation.serialize());
+ptr<replica::raft_result> replica::append_log(const splinterdb_operation& op) {
+    ptr<buffer> new_log(op.serialize());
     ptr<Timer> timer = cs_new<Timer>();
     ptr<raft_result> ret = raft_instance_->append_entries({new_log});
-
-    // if (!ret->get_accepted()) {
-    //     // Log append rejected, usually because this node is not a leader.
-    //     s_warn << "failed to append log: " << ret->get_result_code() << " ("
-    //            << usToString(timer->getTimeUs()) << ")";
-    //     return;
-    // }
 
     if (config_.return_method_ == raft_params::blocking) {
         // Blocking mode:

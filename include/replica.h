@@ -12,8 +12,6 @@ namespace replicated_splinterdb {
 
 class splinterdb_state_machine;
 
-void default_raft_params_init(nuraft::raft_params& params);
-
 class replica {
   public:
     using raft_result = nuraft::cmd_result<nuraft::ptr<nuraft::buffer>>;
@@ -30,8 +28,6 @@ class replica {
     replica& operator=(const replica&) = delete;
 
     explicit replica(const replica_config& config);
-
-    void initialize();
 
     result_t<owned_slice, int32_t> read(slice&& key);
 
@@ -69,6 +65,10 @@ class replica {
     nuraft::ptr<nuraft::state_mgr> smgr_;
     nuraft::raft_launcher launcher_;
     nuraft::ptr<nuraft::raft_server> raft_instance_;
+
+    void default_raft_params_init(nuraft::raft_params& params);
+
+    void initialize();
 };
 
 }  // namespace replicated_splinterdb

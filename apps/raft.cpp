@@ -27,14 +27,15 @@ using replicated_splinterdb::Timer;
 int main(int argc, char** argv) {
     if (argc != 5) {
         std::cerr << "Usage: " << argv[0]
-                  << " <server id> <raft port> <rpc port>" << std::endl;
+                  << " <server id> <raft port> <client session port>"
+                  << " <server session port>" << std::endl;
         return 1;
     }
 
     int server_id = std::atoi(argv[1]);
     uint16_t raft_port = std::atoi(argv[2]);
     uint16_t client_port = std::atoi(argv[3]);
-    uint16_t join_port = std::atoi(argv[3]);
+    uint16_t join_port = std::atoi(argv[4]);
 
     // Initialize data configuration, using default key-comparison handling.
     data_config splinter_data_cfg;
@@ -52,13 +53,12 @@ int main(int argc, char** argv) {
     replica_config replica_cfg{splinter_data_cfg, splinterdb_cfg};
     replica_cfg.server_id_ = server_id;
     replica_cfg.addr_ = "localhost";
-    replica_cfg.port_ = std::atoi(argv[2]);
+    replica_cfg.port_ = raft_port;
 
     replica_cfg.log_level_ = LogLevel::TRACE;
     replica_cfg.display_level_ = LogLevel::DISABLED;
 
     replica replica_instance{replica_cfg};
-    replica_instance.initialize();
 
     rpc::server client_srv(client_port);
     rpc::server join_srv(join_port);

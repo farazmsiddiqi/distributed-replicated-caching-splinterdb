@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
     replica_cfg.display_level_ = LogLevel::DISABLED;
 
     replica replica_instance{replica_cfg};
-    replica_instance.initialize();
 
     std::string prompt = "spl " + std::to_string(replica_cfg.server_id_) + "> ";
     char cmd[1000];
