@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
                       replica_instance.add_server(server_id, endpoint);
                   });
 
-    client_srv.bind("read", [&replica_instance](std::vector<uint8_t> key) {
+    client_srv.bind("get", [&replica_instance](std::vector<uint8_t> key) {
         slice key_slice = slice_create(key.size(), key.data());
         auto result = replica_instance.read(std::move(key_slice));
         if (result.is_ok()) {
@@ -83,6 +83,22 @@ int main(int argc, char** argv) {
                                                std::vector<uint8_t> value) {
         splinterdb_operation op{
             splinterdb_operation::make_put(std::move(key), std::move(value))};
+        ptr<replica::raft_result> result = replica_instance.append_log(op);
+
+        if (result->get_accepted()) {
+            ptr<buffer> buf = result->get();
+            return buf->get_int();
+        } else {
+            int code = static_cast<int>(result->get_result_code());
+            rpc::this_handler().respond_error(
+                std::make_pair(code, result->get_result_str()));
+            return -1;
+        }
+    });
+
+    client_srv.bind("delete", [&replica_instance](std::vector<uint8_t> key) {
+        splinterdb_operation op{
+            splinterdb_operation::make_delete(std::move(key))};
         ptr<replica::raft_result> result = replica_instance.append_log(op);
 
         if (result->get_accepted()) {
@@ -112,6 +128,9 @@ int main(int argc, char** argv) {
             return -1;
         }
     });
+
+    client_srv.async_run(4);
+    join_srv.run();
 
     return 0;
 }
