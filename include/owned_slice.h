@@ -1,7 +1,7 @@
 #ifndef REPLICATED_SPLINTERDB_OWNED_SLICE_H
 #define REPLICATED_SPLINTERDB_OWNED_SLICE_H
 
-#include <cstring>
+#include <vector>
 
 #include "libnuraft/buffer_serializer.hxx"
 #include "splinterdb_wrapper.h"
@@ -12,6 +12,8 @@ class owned_slice {
   public:
     owned_slice();
 
+    owned_slice(std::vector<uint8_t>&& data);
+
     owned_slice(const std::string& str);
 
     owned_slice(const char* cstring);
@@ -20,15 +22,9 @@ class owned_slice {
 
     owned_slice(const slice& spl_slice);
 
-    ~owned_slice();
-
     owned_slice(const owned_slice&) = delete;
 
     owned_slice& operator=(const owned_slice&) = delete;
-
-    owned_slice(owned_slice&& other);
-
-    owned_slice& operator=(owned_slice&& other);
 
     static void deserialize(owned_slice& slice_out,
                             nuraft::buffer_serializer& bs);
@@ -43,9 +39,12 @@ class owned_slice {
 
     std::string to_string() const;
 
+    const std::vector<uint8_t>& data() const;
+
+    static std::vector<uint8_t>&& take_data(owned_slice&& slice);
+
   private:
-    uint64_t length_;
-    const char* data_;
+    std::vector<uint8_t> data_;
 
     explicit owned_slice(size_t length);
 

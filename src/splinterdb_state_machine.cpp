@@ -1,7 +1,8 @@
 #include "splinterdb_state_machine.h"
 
-#include "splinterdb_operation.h"
 #include <iostream>
+
+#include "splinterdb_operation.h"
 
 namespace replicated_splinterdb {
 
@@ -16,12 +17,15 @@ using nuraft::ulong;
 splinterdb_state_machine::splinterdb_state_machine(
     const splinterdb_config& cfg_ref, bool disable_snapshots)
     : spl_handle_(nullptr),
-      spl_cfg_(&cfg_ref),
       last_committed_idx_(0),
       commit_thread_initialized_(false),
       snapshots_(),
       snapshots_lock_(),
-      disable_snapshots_(disable_snapshots) {}
+      disable_snapshots_(disable_snapshots) {
+    if (splinterdb_create(&cfg_ref, &spl_handle_)) {
+        throw std::runtime_error("Failed to create SplinterDB instance.");
+    }
+}
 
 splinterdb_state_machine::~splinterdb_state_machine() {
     splinterdb_close(&spl_handle_);
@@ -30,9 +34,7 @@ splinterdb_state_machine::~splinterdb_state_machine() {
 ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
     bool expected = false;
     if (commit_thread_initialized_.compare_exchange_strong(expected, true)) {
-        if (splinterdb_create(spl_cfg_, &spl_handle_)) {
-            throw std::runtime_error("Failed to create SplinterDB instance.");
-        }
+        splinterdb_register_thread(spl_handle_);
     }
 
     splinterdb_operation operation = splinterdb_operation::deserialize(buf);

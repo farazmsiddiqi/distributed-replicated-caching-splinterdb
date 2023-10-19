@@ -41,6 +41,8 @@ class replica {
     std::pair<nuraft::cmd_result_code, std::string> add_server(
         const nuraft::srv_config& config);
 
+    nuraft::ptr<raft_result> append_log(const splinterdb_operation& operation);
+
     void append_log(const splinterdb_operation& operation,
                     handle_commit_result handle_result);
 

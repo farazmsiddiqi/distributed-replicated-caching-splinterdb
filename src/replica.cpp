@@ -7,7 +7,7 @@
 #include "splinterdb_state_machine.h"
 #include "splinterdb_wrapper.h"
 
-#define s_err  _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
+#define s_err _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 #define s_info _s_info(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 #define s_warn _s_warn(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 
@@ -88,22 +88,12 @@ void replica::initialize() {
 
     asio_service::options asio_opt;
     asio_opt.thread_pool_size_ = config_.asio_thread_pool_size_;
-    asio_opt.worker_start_ = [this](uint32_t) {
-        std::cout << "starting thread" << std::endl;
-#if _USE_SPLINTERDB_LOG_STORE
-        ptr<inmem_state_mgr> mgr =
-            std::dynamic_pointer_cast<inmem_state_mgr>(smgr_);
-        splinterdb_register_thread(mgr->get_splinterdb_handle());
-#endif
-    };
-    asio_opt.worker_stop_ = [this](uint32_t) {
-        std::cout << "stopping thread" << std::endl;
-#if _USE_SPLINTERDB_LOG_STORE
-        ptr<inmem_state_mgr> mgr =
-            std::dynamic_pointer_cast<inmem_state_mgr>(smgr_);
-        splinterdb_deregister_thread(mgr->get_splinterdb_handle());
-#endif
-    };
+    // asio_opt.worker_start_ = [](uint32_t) {
+    //     std::cout << "starting thread" << std::endl;
+    // };
+    // asio_opt.worker_stop_ = [](uint32_t) {
+    //     std::cout << "stopping thread" << std::endl;
+    // };
 
     raft_instance_ =
         launcher_.init(sm_, smgr_, logger_, port_, asio_opt, params);
@@ -203,6 +193,29 @@ void replica::append_log(const splinterdb_operation& operation,
         //   after getting a consensus.
         ret->when_ready(std::bind(handle_result, timer, std::placeholders::_1,
                                   std::placeholders::_2));
+    }
+}
+
+ptr<replica::raft_result> replica::append_log(
+    const splinterdb_operation& operation) {
+    ptr<buffer> new_log(operation.serialize());
+    ptr<Timer> timer = cs_new<Timer>();
+    ptr<raft_result> ret = raft_instance_->append_entries({new_log});
+
+    // if (!ret->get_accepted()) {
+    //     // Log append rejected, usually because this node is not a leader.
+    //     s_warn << "failed to append log: " << ret->get_result_code() << " ("
+    //            << usToString(timer->getTimeUs()) << ")";
+    //     return;
+    // }
+
+    if (config_.return_method_ == raft_params::blocking) {
+        // Blocking mode:
+        //   `append_entries` returns after getting a consensus,
+        //   so that `ret` already has the result from state machine.
+        return ret;
+    } else /* if (config_.return_method_ == raft_params::async_handler) */ {
+        throw std::runtime_error("async handler not implemented");
     }
 }
 

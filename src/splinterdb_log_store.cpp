@@ -1,8 +1,8 @@
 #include "splinterdb_log_store.h"
 
 #include <cstring>
-#include <numeric>
 #include <iostream>
+#include <numeric>
 
 #include "splinterdb_operation.h"
 
@@ -31,7 +31,8 @@ static slice log_key_create(const uint64_t& index) {
 
 static ptr<buffer> slice_to_buffer(const slice& value) {
     ptr<buffer> buf = buffer::alloc(slice_length(value));
-    buf->put_raw(reinterpret_cast<const nuraft::byte*>(slice_data(value)), slice_length(value));
+    buf->put_raw(reinterpret_cast<const nuraft::byte*>(slice_data(value)),
+                 slice_length(value));
     return buf;
 }
 
@@ -232,8 +233,9 @@ void splinterdb_log_store::apply_pack(uint64_t index, buffer& pack) {
         ptr<buffer> buf = buffer::alloc(static_cast<size_t>(size));
         pack.get(buf);
 
-        int rc = splinterdb_insert(spl_, log_key_create(cur_index),
-                                   slice_create(buf->size(), buf->data_begin()));
+        int rc =
+            splinterdb_insert(spl_, log_key_create(cur_index),
+                              slice_create(buf->size(), buf->data_begin()));
         if (rc != 0) {
             throw std::runtime_error("Failed to append log entry at index " +
                                      std::to_string(cur_index));

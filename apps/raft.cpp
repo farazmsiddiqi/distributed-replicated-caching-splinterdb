@@ -4,6 +4,7 @@
 #include "replica.h"
 #include "replica_config.h"
 #include "rpc/server.h"
+#include "rpc/this_handler.h"
 #include "splinterdb_wrapper.h"
 
 #define DB_FILE_SIZE_MB 1024  // Size of SplinterDB device; Fixed when created
@@ -22,40 +23,6 @@ using replicated_splinterdb::replica_config;
 using replicated_splinterdb::result_t;
 using replicated_splinterdb::splinterdb_operation;
 using replicated_splinterdb::Timer;
-
-static std::vector<std::string> tokenize(const char* str, char c = ' ');
-
-static void handle_result(ptr<Timer> timer, replica::raft_result& result,
-                          ptr<std::exception>& err);
-
-std::vector<std::string> tokenize(const char* str, char c) {
-    std::vector<std::string> tokens;
-    do {
-        const char* begin = str;
-        while (*str != c && *str) str++;
-        if (begin != str) tokens.push_back(std::string(begin, str));
-    } while (0 != *str++);
-
-    return tokens;
-}
-
-void handle_result(ptr<Timer> timer, replica::raft_result& result,
-                   ptr<std::exception>& err) {
-    if (result.get_result_code() != cmd_result_code::OK) {
-        // Something went wrong.
-        // This means committing this log failed,
-        // but the log itself is still in the log store.
-        std::cout << "failed: " << result.get_result_code() << ", "
-                  << replicated_splinterdb::usToString(timer->getTimeUs())
-                  << std::endl;
-        return;
-    }
-    ptr<buffer> buf = result.get();
-    int32_t ret_value = buf->get_int();
-    std::cout << "succeeded, "
-              << replicated_splinterdb::usToString(timer->getTimeUs())
-              << ", return code: " << ret_value << std::endl;
-}
 
 int main(int argc, char** argv) {
     if (argc != 5) {
@@ -96,13 +63,55 @@ int main(int argc, char** argv) {
     rpc::server client_srv(client_port);
     rpc::server join_srv(join_port);
 
-    // join_port.bind("get", [&replica_instance](const char* key) { return
-    // m.multiply(a, b); });
-
     join_srv.bind("join",
                   [&replica_instance](int32_t server_id, std::string endpoint) {
                       replica_instance.add_server(server_id, endpoint);
                   });
+
+    client_srv.bind("read", [&replica_instance](std::vector<uint8_t> key) {
+        slice key_slice = slice_create(key.size(), key.data());
+        auto result = replica_instance.read(std::move(key_slice));
+        if (result.is_ok()) {
+            return owned_slice::take_data(std::move(*result));
+        } else {
+            rpc::this_handler().respond_error(result.unwrap_err());
+            return std::vector<uint8_t>{};
+        }
+    });
+
+    client_srv.bind("put", [&replica_instance](std::vector<uint8_t> key,
+                                               std::vector<uint8_t> value) {
+        splinterdb_operation op{
+            splinterdb_operation::make_put(std::move(key), std::move(value))};
+        ptr<replica::raft_result> result = replica_instance.append_log(op);
+
+        if (result->get_accepted()) {
+            ptr<buffer> buf = result->get();
+            return buf->get_int();
+        } else {
+            int code = static_cast<int>(result->get_result_code());
+            rpc::this_handler().respond_error(
+                std::make_pair(code, result->get_result_str()));
+            return -1;
+        }
+    });
+
+    client_srv.bind("update", [&replica_instance](std::vector<uint8_t> key,
+                                                  std::vector<uint8_t> value) {
+        splinterdb_operation op{
+            splinterdb_operation::make_put(std::move(key), std::move(value))};
+        ptr<replica::raft_result> result = replica_instance.append_log(op);
+
+        if (result->get_accepted()) {
+            ptr<buffer> buf = result->get();
+            return buf->get_int();
+        } else {
+            int code = static_cast<int>(result->get_result_code());
+            rpc::this_handler().respond_error(
+                std::make_pair(code, result->get_result_str()));
+            return -1;
+        }
+    });
 
     return 0;
 }
