@@ -20,10 +20,10 @@ limitations under the License.
 #define _USE_SPLINTERDB_LOG_STORE 0
 
 #if _USE_SPLINTERDB_LOG_STORE
-#include "server/splinterdb_log_store.h"
+#include "splinterdb_log_store.h"
 #define log_store_impl replicated_splinterdb::splinterdb_log_store
 #else
-#include "server/in_memory_log_store.h"
+#include "in_memory_log_store.h"
 #define log_store_impl inmem_log_store
 #endif
 

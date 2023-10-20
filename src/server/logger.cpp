@@ -19,10 +19,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
-#include "server/logger.h"
+#include "logger.h"
 
 #if defined(__linux__) || defined(__APPLE__)
-#include "server/backtrace.h"
+#include "backtrace.h"
 #endif
 
 #include <assert.h>

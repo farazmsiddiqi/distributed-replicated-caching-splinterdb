@@ -1,4 +1,4 @@
-#include "server/splinterdb_state_machine.h"
+#include "splinterdb_state_machine.h"
 
 #include <iostream>
 

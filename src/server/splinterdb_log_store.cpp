@@ -1,4 +1,4 @@
-#include "server/splinterdb_log_store.h"
+#include "splinterdb_log_store.h"
 
 #include <cstring>
 #include <iostream>

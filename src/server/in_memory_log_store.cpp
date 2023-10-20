@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
-#include "server/in_memory_log_store.h"
+#include "in_memory_log_store.h"
 
 #include <cassert>
 

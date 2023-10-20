@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-#include "server/in_memory_state_mgr.hxx"
-#include "server/logger.h"
-#include "server/splinterdb_state_machine.h"
+#include "in_memory_state_mgr.hxx"
+#include "logger.h"
 #include "server/splinterdb_wrapper.h"
+#include "splinterdb_state_machine.h"
 
 #define s_err _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 #define s_info _s_info(std::dynamic_pointer_cast<SimpleLogger>(logger_))
