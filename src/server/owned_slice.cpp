@@ -6,8 +6,6 @@ namespace replicated_splinterdb {
 
 using nuraft::buffer_serializer;
 
-owned_slice::owned_slice() : data_() {}
-
 owned_slice::owned_slice(std::vector<uint8_t>&& data) : data_(data) {}
 
 owned_slice::owned_slice(size_t length) : data_(length) {}
@@ -40,9 +38,7 @@ size_t owned_slice::serialized_size() const {
     return sizeof(uint64_t) + data_.size();
 }
 
-size_t owned_slice::size() const {
-    return data_.size();
-}
+size_t owned_slice::size() const { return data_.size(); }
 
 const std::vector<uint8_t>& owned_slice::data() const { return data_; }
 

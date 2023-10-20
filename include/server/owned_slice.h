@@ -10,7 +10,7 @@ namespace replicated_splinterdb {
 
 class owned_slice {
   public:
-    owned_slice();
+    owned_slice() = default;
 
     owned_slice(std::vector<uint8_t>&& data);
 

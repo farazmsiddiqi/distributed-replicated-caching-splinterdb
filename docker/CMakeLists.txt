@@ -25,7 +25,7 @@ include_directories("${CMAKE_SOURCE_DIR}/splinterdb/include/")
 set(DISABLE_SSL 1)
 add_subdirectory(nuraft)
 add_subdirectory(rpclib)
-add_subdirectory(apps)
+add_subdirectory(apps EXCLUDE_FROM_ALL)
 add_subdirectory(src)
 
 set_property(DIRECTORY nuraft/tests PROPERTY EXCLUDE_FROM_ALL True)

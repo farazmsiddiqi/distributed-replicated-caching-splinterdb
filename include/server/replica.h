@@ -1,7 +1,6 @@
 #ifndef REPLICATED_SPLINTERDB_SERVER_REPLICA_H
 #define REPLICATED_SPLINTERDB_SERVER_REPLICA_H
 
-#include "common/result.h"
 #include "common/timer.h"
 #include "libnuraft/nuraft.hxx"
 #include "owned_slice.h"
@@ -29,7 +28,7 @@ class replica {
 
     explicit replica(const replica_config& config);
 
-    result_t<owned_slice, int32_t> read(slice&& key);
+    std::pair<owned_slice, int32_t> read(slice&& key);
 
     std::pair<nuraft::cmd_result_code, std::string> add_server(
         int32_t server_id, const std::string& endpoint);

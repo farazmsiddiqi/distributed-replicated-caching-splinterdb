@@ -130,7 +130,7 @@ void replica::shutdown(size_t time_limit_sec) {
     launcher_.shutdown(time_limit_sec);
 }
 
-result_t<owned_slice, int32_t> replica::read(slice&& key) {
+std::pair<owned_slice, int32_t> replica::read(slice&& key) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,
                                   NULL);
@@ -138,16 +138,16 @@ result_t<owned_slice, int32_t> replica::read(slice&& key) {
     int rc = splinterdb_lookup(sm_->get_splinterdb_handle(),
                                std::forward<slice>(key), &result);
     if (rc) {
-        return rc;
+        return {owned_slice{}, rc};
     }
 
     slice value;
     rc = splinterdb_lookup_result_value(&result, &value);
     if (rc) {
-        return rc;
+        return {owned_slice{}, rc};
     }
 
-    return owned_slice(value);
+    return {owned_slice(value), rc};
 }
 
 std::pair<cmd_result_code, std::string> replica::add_server(
