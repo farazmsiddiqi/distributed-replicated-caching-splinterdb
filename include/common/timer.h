@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <iomanip>
+#include <thread>
 
 namespace replicated_splinterdb {
 

@@ -1,12 +1,12 @@
 #ifndef REPLICATED_SPLINTERDB_REPLICA_H
 #define REPLICATED_SPLINTERDB_REPLICA_H
 
+#include "common/result.h"
+#include "common/timer.h"
 #include "libnuraft/nuraft.hxx"
 #include "owned_slice.h"
 #include "replica_config.h"
-#include "result.h"
 #include "splinterdb_operation.h"
-#include "timer.h"
 
 namespace replicated_splinterdb {
 

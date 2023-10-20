@@ -9,13 +9,13 @@ target_link_libraries(splinter splinterdb)
 target_compile_definitions(splinter PRIVATE -DSPLINTERDB_PLATFORM_DIR=platform_linux)
 
 add_executable(cli cli.cpp)
-target_link_libraries(cli replicated-splinterdb)
+target_link_libraries(cli replicated-splinterdb-server)
 set_target_properties(cli PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_executable(server server.cpp)
-target_link_libraries(server replicated-splinterdb gflags)
+target_link_libraries(server replicated-splinterdb-server gflags)
 set_target_properties(server PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_executable(client client.cpp)
-target_link_libraries(client replicated-splinterdb gflags)
+target_link_libraries(client replicated-splinterdb-client gflags)
 set_target_properties(client PROPERTIES LINK_FLAGS_RELEASE -s)
