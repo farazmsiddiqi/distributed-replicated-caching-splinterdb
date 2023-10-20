@@ -1,11 +1,11 @@
-#include "replica.h"
+#include "server/replica.h"
 
 #include <iostream>
 
-#include "in_memory_state_mgr.hxx"
-#include "logger.h"
-#include "splinterdb_state_machine.h"
-#include "splinterdb_wrapper.h"
+#include "server/in_memory_state_mgr.hxx"
+#include "server/logger.h"
+#include "server/splinterdb_state_machine.h"
+#include "server/splinterdb_wrapper.h"
 
 #define s_err _s_err(std::dynamic_pointer_cast<SimpleLogger>(logger_))
 #define s_info _s_info(std::dynamic_pointer_cast<SimpleLogger>(logger_))

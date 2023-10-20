@@ -41,7 +41,7 @@ limitations under the License.
 
 #include "libnuraft/logger.hxx"
 #include "libnuraft/ptr.hxx"
-#include "log_level.h"
+#include "server/log_level.h"
 
 // To suppress false alarms by thread sanitizer,
 // add -DSUPPRESS_TSAN_FALSE_ALARMS=1 flag to CXXFLAGS.

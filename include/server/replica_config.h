@@ -4,8 +4,8 @@
 #include <optional>
 
 #include "libnuraft/nuraft.hxx"
-#include "log_level.h"
-#include "splinterdb_wrapper.h"
+#include "server/log_level.h"
+#include "server/splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {
 

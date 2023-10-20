@@ -1,4 +1,4 @@
-#include "server.h"
+#include "server/server.h"
 
 #include "common/types.h"
 

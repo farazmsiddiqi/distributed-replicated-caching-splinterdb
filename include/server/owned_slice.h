@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "libnuraft/buffer_serializer.hxx"
-#include "splinterdb_wrapper.h"
+#include "server/splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {
 

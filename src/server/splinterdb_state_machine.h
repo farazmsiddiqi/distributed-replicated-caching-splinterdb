@@ -4,8 +4,8 @@
 #include <map>
 
 #include "libnuraft/nuraft.hxx"
-#include "splinterdb_snapshot.h"
-#include "splinterdb_wrapper.h"
+#include "server/splinterdb_snapshot.h"
+#include "server/splinterdb_wrapper.h"
 
 namespace replicated_splinterdb {
 

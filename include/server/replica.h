@@ -3,9 +3,9 @@
 
 #include "common/timer.h"
 #include "libnuraft/nuraft.hxx"
-#include "owned_slice.h"
-#include "replica_config.h"
-#include "splinterdb_operation.h"
+#include "server/owned_slice.h"
+#include "server/replica_config.h"
+#include "server/splinterdb_operation.h"
 
 namespace replicated_splinterdb {
 

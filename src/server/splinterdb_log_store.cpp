@@ -1,10 +1,10 @@
-#include "splinterdb_log_store.h"
+#include "server/splinterdb_log_store.h"
 
 #include <cstring>
 #include <iostream>
 #include <numeric>
 
-#include "splinterdb_operation.h"
+#include "server/splinterdb_operation.h"
 
 namespace replicated_splinterdb {
 

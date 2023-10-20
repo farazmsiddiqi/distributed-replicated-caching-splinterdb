@@ -1,8 +1,8 @@
-#include "splinterdb_state_machine.h"
+#include "server/splinterdb_state_machine.h"
 
 #include <iostream>
 
-#include "splinterdb_operation.h"
+#include "server/splinterdb_operation.h"
 
 namespace replicated_splinterdb {
 
