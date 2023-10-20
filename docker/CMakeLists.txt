@@ -5,7 +5,7 @@ project(ReplicatedSplinterDB
         DESCRIPTION "Replicating SplinterDB with Raft"
         LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Release)
 
 # Let's ensure -std=c++xx instead of -std=g++xx
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -22,9 +22,11 @@ include_directories("${CMAKE_SOURCE_DIR}/rpclib/include/")
 include_directories("${CMAKE_SOURCE_DIR}/splinterdb/include/")
 
 # Include subdirectories with library source code 
+set(DISABLE_SSL 1)
 add_subdirectory(nuraft)
 add_subdirectory(rpclib)
 add_subdirectory(apps)
 add_subdirectory(src)
 
-add_compile_definitions(DISABLE_SSL=1)
+set_property(DIRECTORY nuraft/tests PROPERTY EXCLUDE_FROM_ALL True)
+set_property(DIRECTORY nuraft/examples PROPERTY EXCLUDE_FROM_ALL True)
