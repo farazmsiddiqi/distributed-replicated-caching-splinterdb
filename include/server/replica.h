@@ -1,5 +1,5 @@
-#ifndef REPLICATED_SPLINTERDB_REPLICA_H
-#define REPLICATED_SPLINTERDB_REPLICA_H
+#ifndef REPLICATED_SPLINTERDB_SERVER_REPLICA_H
+#define REPLICATED_SPLINTERDB_SERVER_REPLICA_H
 
 #include "common/result.h"
 #include "common/timer.h"
@@ -73,4 +73,4 @@ class replica {
 
 }  // namespace replicated_splinterdb
 
-#endif  // REPLICATED_SPLINTERDB_REPLICA_H
+#endif  // REPLICATED_SPLINTERDB_SERVER_REPLICA_H

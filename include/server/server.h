@@ -1,5 +1,5 @@
-#ifndef REPLICATED_SPLINTERDB_SERVER_H
-#define REPLICATED_SPLINTERDB_SERVER_H
+#ifndef REPLICATED_SPLINTERDB_SERVER_SERVER_H
+#define REPLICATED_SPLINTERDB_SERVER_SERVER_H
 
 #include "replica.h"
 #include "replica_config.h"
@@ -34,4 +34,4 @@ class server {
 
 }  // namespace replicated_splinterdb
 
-#endif  // REPLICATED_SPLINTERDB_SERVER_H
+#endif  // REPLICATED_SPLINTERDB_SERVER_SERVER_H

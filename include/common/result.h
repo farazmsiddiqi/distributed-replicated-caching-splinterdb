@@ -1,5 +1,5 @@
-#ifndef REPLICATED_SPLINTERDB_RESULT_H
-#define REPLICATED_SPLINTERDB_RESULT_H
+#ifndef REPLICATED_SPLINTERDB_COMMON_RESULT_H
+#define REPLICATED_SPLINTERDB_COMMON_RESULT_H
 
 #include <variant>
 
@@ -42,4 +42,4 @@ class result_t {
 
 }  // namespace replicated_splinterdb
 
-#endif  // REPLICATED_SPLINTERDB_RESULT_H
+#endif  // REPLICATED_SPLINTERDB_COMMON_RESULT_H

@@ -1,5 +1,5 @@
-#ifndef REPLICATED_SPLINTERDB_TIMER_H
-#define REPLICATED_SPLINTERDB_TIMER_H
+#ifndef REPLICATED_SPLINTERDB_COMMON_TIMER_H
+#define REPLICATED_SPLINTERDB_COMMON_TIMER_H
 
 #include <chrono>
 #include <iomanip>
@@ -78,4 +78,4 @@ static std::string usToString(uint64_t us) {
 
 };  // namespace replicated_splinterdb
 
-#endif  // REPLICATED_SPLINTERDB_TIMER_H
+#endif  // REPLICATED_SPLINTERDB_COMMON_TIMER_H
