@@ -1,4 +1,4 @@
-FROM --platform=arm64 neilk3/splinterdb-build-env as build
+FROM neilk3/splinterdb-build-env as build
 
 RUN apt-get update -y \
     && apt-get install -y cmake zlib1g-dev libgflags-dev \

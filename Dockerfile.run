@@ -1,4 +1,4 @@
-FROM --platform=arm64 neilk3/splinterdb-build-env as build
+FROM neilk3/splinterdb-build-env as build
 
 RUN apt-get update -y \
     && apt-get install -y cmake zlib1g-dev libgflags-dev \
@@ -23,7 +23,7 @@ COPY src /work/src
 COPY docker/CMakeLists.txt /work/CMakeLists.txt
 RUN cmake -DDISABLE_SSL=1 .. && make
 
-FROM --platform=arm64 neilk3/splinterdb-run-env as run
+FROM neilk3/splinterdb-run-env as run
 
 ENV LIBS_DIR /libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}

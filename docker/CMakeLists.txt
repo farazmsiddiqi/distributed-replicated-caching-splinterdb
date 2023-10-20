@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.7)
 
 project(ReplicatedSplinterDB
         VERSION 1.0
@@ -26,3 +26,5 @@ add_subdirectory(nuraft)
 add_subdirectory(rpclib)
 add_subdirectory(apps)
 add_subdirectory(src)
+
+add_compile_definitions(DISABLE_SSL=1)

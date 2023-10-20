@@ -31,4 +31,3 @@ target_compile_options(
 target_include_directories(replicated-splinterdb PUBLIC "${ReplicatedSplinterDB_SOURCE_DIR}/include/")
 
 target_link_libraries(replicated-splinterdb nuraft.a rpc splinterdb pthread)
-
