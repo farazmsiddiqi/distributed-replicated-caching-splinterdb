@@ -1,5 +1,6 @@
 #include "server/server.h"
 
+#include "common/rpc.h"
 #include "common/types.h"
 
 namespace replicated_splinterdb {
@@ -38,23 +39,25 @@ static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
 }
 
 void server::initialize() {
-    join_srv_.bind("join", [this](int32_t server_id, std::string raft_endpoint,
-                                  std::string client_endpoint) {
+    join_srv_.bind(RPC_JOIN_REPLICA_GROUP, [this](int32_t server_id,
+                                                  std::string raft_endpoint,
+                                                  std::string client_endpoint) {
         replica_instance_.add_server(server_id, raft_endpoint, client_endpoint);
     });
 
     // void -> std::string
-    client_srv_.bind("ping", []() { return "pong"; });
+    client_srv_.bind(RPC_PING, []() { return "pong"; });
 
     // void -> int32_t
-    client_srv_.bind("get_id", [this]() { return replica_instance_.get_id(); });
+    client_srv_.bind(RPC_GET_SRV_ID,
+                     [this]() { return replica_instance_.get_id(); });
 
     // void -> int32_t
-    client_srv_.bind("get_leader_id",
+    client_srv_.bind(RPC_GET_LEADER_ID,
                      [this]() { return replica_instance_.get_leader(); });
 
     // void -> std::vector<std::tuple<int32_t, std::string>>
-    client_srv_.bind("get_all_servers", [this]() {
+    client_srv_.bind(RPC_GET_ALL_SERVERS, [this]() {
         std::vector<ptr<nuraft::srv_config>> configs;
         replica_instance_.get_all_servers(configs);
 
@@ -67,7 +70,7 @@ void server::initialize() {
     });
 
     // int32_t -> std::string
-    client_srv_.bind("get_server_endpoint", [this](int32_t server_id) {
+    client_srv_.bind(RPC_GET_SRV_ENDPOINT, [this](int32_t server_id) {
         auto srv = replica_instance_.get_server_info(server_id);
 
         if (srv) {
@@ -80,7 +83,7 @@ void server::initialize() {
     });
 
     // std::vector<uint8_t> -> rpc_read_result
-    client_srv_.bind("get", [this](vector<uint8_t> key) {
+    client_srv_.bind(RPC_SPLINTERDB_GET, [this](vector<uint8_t> key) {
         slice key_slice = slice_create(key.size(), key.data());
         auto [slice, rc] = replica_instance_.read(std::move(key_slice));
 
@@ -92,16 +95,17 @@ void server::initialize() {
     });
 
     // (std::vector<uint8_t>, std::vector<uint8_t>) -> rpc_mutation_result
-    client_srv_.bind("put", [this](vector<uint8_t> key, vector<uint8_t> value) {
-        splinterdb_operation op{
-            splinterdb_operation::make_put(std::move(key), std::move(value))};
-        ptr<replica::raft_result> result = replica_instance_.append_log(op);
+    client_srv_.bind(
+        RPC_SPLINTERDB_PUT, [this](vector<uint8_t> key, vector<uint8_t> value) {
+            splinterdb_operation op{splinterdb_operation::make_put(
+                std::move(key), std::move(value))};
+            ptr<replica::raft_result> result = replica_instance_.append_log(op);
 
-        return extract_result(result);
-    });
+            return extract_result(result);
+        });
 
     // std::vector<uint8_t> -> rpc_mutation_result
-    client_srv_.bind("delete", [this](vector<uint8_t> key) {
+    client_srv_.bind(RPC_SPLINTERDB_DELETE, [this](vector<uint8_t> key) {
         splinterdb_operation op{
             splinterdb_operation::make_delete(std::move(key))};
         ptr<replica::raft_result> result = replica_instance_.append_log(op);
@@ -110,14 +114,14 @@ void server::initialize() {
     });
 
     // (std::vector<uint8_t>, std::vector<uint8_t>) -> rpc_mutation_result
-    client_srv_.bind(
-        "update", [this](vector<uint8_t> key, vector<uint8_t> value) {
-            splinterdb_operation op{splinterdb_operation::make_put(
-                std::move(key), std::move(value))};
-            ptr<replica::raft_result> result = replica_instance_.append_log(op);
+    client_srv_.bind(RPC_SPLINTERDB_UPDATE, [this](vector<uint8_t> key,
+                                                   vector<uint8_t> value) {
+        splinterdb_operation op{
+            splinterdb_operation::make_put(std::move(key), std::move(value))};
+        ptr<replica::raft_result> result = replica_instance_.append_log(op);
 
-            return extract_result(result);
-        });
+        return extract_result(result);
+    });
 }
 
 }  // namespace replicated_splinterdb
