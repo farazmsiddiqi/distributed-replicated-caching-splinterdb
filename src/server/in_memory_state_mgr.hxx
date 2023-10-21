@@ -34,16 +34,17 @@ namespace nuraft {
 class inmem_state_mgr: public state_mgr {
 public:
     inmem_state_mgr(int srv_id,
-                    const std::string& endpoint)
+                    const std::string& raft_endpoint,
+                    const std::string& client_endpoint)
         : my_id_(srv_id)
-        , my_endpoint_(endpoint)
+        , my_endpoint_(raft_endpoint)
 #if _USE_SPLINTERDB_LOG_STORE
         , cur_log_store_( cs_new<log_store_impl>("log" + std::to_string(srv_id) + ".db") )
 #else
         , cur_log_store_( cs_new<inmem_log_store>() )
 #endif
     {
-        my_srv_config_ = cs_new<srv_config>( srv_id, endpoint );
+        my_srv_config_ = cs_new<srv_config>( srv_id, 0, raft_endpoint, client_endpoint, false );
 
         // Initial cluster config: contains only one server (myself).
         saved_config_ = cs_new<cluster_config>();

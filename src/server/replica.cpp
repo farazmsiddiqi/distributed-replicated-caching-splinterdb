@@ -40,8 +40,9 @@ void replica::default_raft_params_init(raft_params& params) {
 replica::replica(const replica_config& config)
     : server_id_(config.server_id_),
       addr_(config.addr_),
-      port_(config.port_),
-      endpoint_(addr_ + ":" + std::to_string(port_)),
+      raft_port_(config.raft_port_),
+      raft_endpoint_(addr_ + ":" + std::to_string(config.raft_port_)),
+      client_endpoint_(addr_ + ":" + std::to_string(config_.client_port_)),
       config_(config),
       logger_(nullptr),
       spl_log_file_(nullptr),
@@ -74,7 +75,8 @@ replica::replica(const replica_config& config)
     // Initialize SplinterDB state machine and state manager
     sm_ = cs_new<splinterdb_state_machine>(config_.splinterdb_cfg_,
                                            config_.snapshot_frequency_ <= 0);
-    smgr_ = cs_new<inmem_state_mgr>(server_id_, endpoint_);
+    smgr_ =
+        cs_new<inmem_state_mgr>(server_id_, raft_endpoint_, client_endpoint_);
 
     initialize();
 }
@@ -86,7 +88,7 @@ void replica::initialize() {
     default_raft_params_init(params);
     params.snapshot_distance_ = std::max(0, config_.snapshot_frequency_);
 
-    params.return_method_ = config_.return_method_;
+    params.return_method_ = config_.get_return_method();
 
     asio_service::options asio_opt;
     asio_opt.thread_pool_size_ = config_.asio_thread_pool_size_;
@@ -98,7 +100,7 @@ void replica::initialize() {
     // };
 
     raft_instance_ =
-        launcher_.init(sm_, smgr_, logger_, port_, asio_opt, params);
+        launcher_.init(sm_, smgr_, logger_, raft_port_, asio_opt, params);
 
     if (!raft_instance_) {
         std::cerr << "Failed to initialize launcher (see the message "
@@ -151,9 +153,10 @@ std::pair<owned_slice, int32_t> replica::read(slice&& key) {
 }
 
 std::pair<cmd_result_code, std::string> replica::add_server(
-    int32_t server_id, const std::string& endpoint) {
-    srv_config srv_conf_to_add(server_id, endpoint);
-    return add_server(srv_conf_to_add);
+    int32_t server_id, const std::string& raft_endpoint,
+    const std::string& client_endpoint) {
+    srv_config conf(server_id, 0, raft_endpoint, client_endpoint, false);
+    return add_server(conf);
 }
 
 std::pair<cmd_result_code, std::string> replica::add_server(
@@ -182,13 +185,13 @@ void replica::append_log(const splinterdb_operation& operation,
         return;
     }
 
-    if (config_.return_method_ == raft_params::blocking) {
+    if (config_.get_return_method() == raft_params::blocking) {
         // Blocking mode:
         //   `append_entries` returns after getting a consensus,
         //   so that `ret` already has the result from state machine.
         ptr<std::exception> err(nullptr);
         handle_result(timer, *ret, err);
-    } else if (config_.return_method_ == raft_params::async_handler) {
+    } else if (config_.get_return_method() == raft_params::async_handler) {
         // Async mode:
         //   `append_entries` returns immediately.
         //   `handle_result` will be invoked asynchronously,
@@ -203,7 +206,7 @@ ptr<replica::raft_result> replica::append_log(const splinterdb_operation& op) {
     ptr<Timer> timer = cs_new<Timer>();
     ptr<raft_result> ret = raft_instance_->append_entries({new_log});
 
-    if (config_.return_method_ == raft_params::blocking) {
+    if (config_.get_return_method() == raft_params::blocking) {
         // Blocking mode:
         //   `append_entries` returns after getting a consensus,
         //   so that `ret` already has the result from state machine.

@@ -31,15 +31,26 @@ class replica {
     std::pair<owned_slice, int32_t> read(slice&& key);
 
     std::pair<nuraft::cmd_result_code, std::string> add_server(
-        int32_t server_id, const std::string& endpoint);
-
-    std::pair<nuraft::cmd_result_code, std::string> add_server(
-        const nuraft::srv_config& config);
+        int32_t server_id, const std::string& raft_endpoint,
+        const std::string& client_endpoint);
 
     nuraft::ptr<raft_result> append_log(const splinterdb_operation& operation);
 
     void append_log(const splinterdb_operation& operation,
                     handle_commit_result handle_result);
+
+    int32_t get_id() const { return server_id_; }
+
+    int32_t get_leader() const { return raft_instance_->get_leader(); }
+
+    nuraft::ptr<nuraft::srv_config> get_server_info(int32_t server_id) const {
+        return raft_instance_->get_srv_config(server_id);
+    }
+
+    void get_all_servers(
+        std::vector<nuraft::ptr<nuraft::srv_config>>& configs) const {
+        raft_instance_->get_srv_config_all(configs);
+    }
 
     /**
      * Shutdown Raft server and ASIO service.
@@ -51,10 +62,11 @@ class replica {
     void shutdown(size_t time_limit_sec);
 
   private:
-    int server_id_;
+    int32_t server_id_;
     std::string addr_;
-    int port_;
-    std::string endpoint_;
+    int raft_port_;
+    std::string raft_endpoint_;
+    std::string client_endpoint_;
 
     replica_config config_;
 
@@ -68,6 +80,9 @@ class replica {
     void default_raft_params_init(nuraft::raft_params& params);
 
     void initialize();
+
+    std::pair<nuraft::cmd_result_code, std::string> add_server(
+        const nuraft::srv_config& config);
 };
 
 }  // namespace replicated_splinterdb

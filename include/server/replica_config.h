@@ -13,7 +13,8 @@ struct replica_config {
     replica_config(const data_config& splinterdb_data_cfg,
                    const splinterdb_config& splinterdb_cfg)
         : server_id_(0),
-          port_(25000),
+          raft_port_(25000),
+          client_port_(25001),
           addr_("localhost"),
           asio_thread_pool_size_(4),
           return_method_(nuraft::raft_params::blocking),
@@ -29,10 +30,15 @@ struct replica_config {
         splinterdb_cfg_.data_cfg = &splinterdb_data_cfg_;
     }
 
+    nuraft::raft_params::return_method_type get_return_method() const {
+        return return_method_;
+    }
+
     // Replica identifier parameters
 
-    int server_id_;
-    uint16_t port_;
+    int32_t server_id_;
+    uint16_t raft_port_;
+    uint16_t client_port_;
     std::string addr_;
 
     // Asio-specific parameters
@@ -41,7 +47,6 @@ struct replica_config {
 
     // Raft-specific parameters
 
-    nuraft::raft_params::return_method_type return_method_;
     int32_t snapshot_frequency_;
     size_t initialization_delay_ms_;
     size_t initialization_retries_;
@@ -60,6 +65,8 @@ struct replica_config {
     splinterdb_config splinterdb_cfg_;
 
   private:
+    nuraft::raft_params::return_method_type return_method_;
+
     replica_config() = delete;
 };
 

@@ -1,6 +1,8 @@
 #ifndef REPLICATED_SPLINTERDB_CLIENT_CLIENT_H
 #define REPLICATED_SPLINTERDB_CLIENT_CLIENT_H
 
+#include <map>
+
 #include "common/types.h"
 #include "rpc/client.h"
 
@@ -27,7 +29,8 @@ class client {
     rpc_mutation_result del(const std::vector<uint8_t>& key);
 
   private:
-    rpc::client c_;
+    std::map<int32_t, rpc::client> clients_;
+    int32_t leader_id_;
 };
 
 }  // namespace replicated_splinterdb

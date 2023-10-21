@@ -18,10 +18,16 @@ static bool validate_port(const char* flagname, int32 value) {
 }
 
 DEFINE_int32(serverid, -1, "The ID of the server");
-DEFINE_int32(raftport, 10001, "The port over which communication for replication should take place");
-DEFINE_int32(clientport, 10002, "The port over which client communication should take place");
-DEFINE_int32(joinport, 10003, "The port over which replica server joining communication should take place");
-DEFINE_string(join_endpoint, "", "The endpoint of the seed replica server to join");
+DEFINE_int32(
+    raftport, 10001,
+    "The port over which communication for replication should take place");
+DEFINE_int32(clientport, 10002,
+             "The port over which client communication should take place");
+DEFINE_int32(joinport, 10003,
+             "The port over which replica server joining communication should "
+             "take place");
+DEFINE_string(join_endpoint, "",
+              "The endpoint of the seed replica server to join");
 
 DEFINE_validator(raftport, &validate_port);
 DEFINE_validator(clientport, &validate_port);
@@ -38,7 +44,8 @@ using replicated_splinterdb::replica_config;
 using replicated_splinterdb::server;
 
 int main(int argc, char** argv) {
-    gflags::SetUsageMessage("The executable to start a replicated SplinterDB instance");
+    gflags::SetUsageMessage(
+        "The executable to start a replicated SplinterDB instance");
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     if (FLAGS_serverid < 1) {

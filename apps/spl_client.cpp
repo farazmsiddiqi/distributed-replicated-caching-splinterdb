@@ -50,7 +50,8 @@ std::vector<std::string> tokenize(const char* str, char c) {
 }
 
 int main(int argc, char** argv) {
-    gflags::SetUsageMessage("A CLI client to interact with a replicated SplinterDB server");
+    gflags::SetUsageMessage(
+        "A CLI client to interact with a replicated SplinterDB server");
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     if (FLAGS_endpoint.empty()) {

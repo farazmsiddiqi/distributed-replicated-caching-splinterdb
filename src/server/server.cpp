@@ -25,7 +25,7 @@ void server::run() {
     join_srv_.run();
 }
 
-rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
+static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
     int32_t spl_rc = -1;
     if (result->get_accepted()) {
         ptr<buffer> buf = result->get();
@@ -38,12 +38,48 @@ rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
 }
 
 void server::initialize() {
-    join_srv_.bind("join", [this](int32_t server_id, std::string endpoint) {
-        replica_instance_.add_server(server_id, endpoint);
+    join_srv_.bind("join", [this](int32_t server_id, std::string raft_endpoint,
+                                  std::string client_endpoint) {
+        replica_instance_.add_server(server_id, raft_endpoint, client_endpoint);
     });
 
+    // void -> std::string
     client_srv_.bind("ping", []() { return "pong"; });
 
+    // void -> int32_t
+    client_srv_.bind("get_id", [this]() { return replica_instance_.get_id(); });
+
+    // void -> int32_t
+    client_srv_.bind("get_leader_id",
+                     [this]() { return replica_instance_.get_leader(); });
+
+    // void -> std::vector<std::tuple<int32_t, std::string>>
+    client_srv_.bind("get_all_servers", [this]() {
+        std::vector<ptr<nuraft::srv_config>> configs;
+        replica_instance_.get_all_servers(configs);
+
+        std::vector<std::tuple<int32_t, std::string>> result;
+        for (auto& srv : configs) {
+            result.emplace_back(srv->get_id(), srv->get_aux());
+        }
+
+        return result;
+    });
+
+    // int32_t -> std::string
+    client_srv_.bind("get_server_endpoint", [this](int32_t server_id) {
+        auto srv = replica_instance_.get_server_info(server_id);
+
+        if (srv) {
+            return srv->get_aux();
+        } else {
+            rpc::this_handler().respond_error(
+                std::make_tuple("Invalid server id"));
+            return "";
+        }
+    });
+
+    // std::vector<uint8_t> -> rpc_read_result
     client_srv_.bind("get", [this](vector<uint8_t> key) {
         slice key_slice = slice_create(key.size(), key.data());
         auto [slice, rc] = replica_instance_.read(std::move(key_slice));
@@ -55,6 +91,7 @@ void server::initialize() {
         }
     });
 
+    // (std::vector<uint8_t>, std::vector<uint8_t>) -> rpc_mutation_result
     client_srv_.bind("put", [this](vector<uint8_t> key, vector<uint8_t> value) {
         splinterdb_operation op{
             splinterdb_operation::make_put(std::move(key), std::move(value))};
@@ -63,6 +100,7 @@ void server::initialize() {
         return extract_result(result);
     });
 
+    // std::vector<uint8_t> -> rpc_mutation_result
     client_srv_.bind("delete", [this](vector<uint8_t> key) {
         splinterdb_operation op{
             splinterdb_operation::make_delete(std::move(key))};
@@ -71,6 +109,7 @@ void server::initialize() {
         return extract_result(result);
     });
 
+    // (std::vector<uint8_t>, std::vector<uint8_t>) -> rpc_mutation_result
     client_srv_.bind(
         "update", [this](vector<uint8_t> key, vector<uint8_t> value) {
             splinterdb_operation op{splinterdb_operation::make_put(
