@@ -62,13 +62,13 @@ class replica {
     void shutdown(size_t time_limit_sec);
 
   private:
+    replica_config config_;
+
     int32_t server_id_;
     std::string addr_;
     int raft_port_;
     std::string raft_endpoint_;
     std::string client_endpoint_;
-
-    replica_config config_;
 
     nuraft::ptr<nuraft::logger> logger_;
     FILE* spl_log_file_;

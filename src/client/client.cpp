@@ -15,10 +15,10 @@ client::client(const std::string& host, uint16_t port) : clients_() {
         }
 
         int32_t id = cl.call(RPC_GET_SRV_ID).as<int32_t>();
-        clients_.emplace(id, std::move(cl));
+        clients_.emplace(std::piecewise_construct, std::forward_as_tuple(id),
+                         std::forward_as_tuple(host, port));
 
-        auto srvs = clients_[id]
-                        .call(RPC_GET_ALL_SERVERS)
+        auto srvs = cl.call(RPC_GET_ALL_SERVERS)
                         .as<std::vector<std::tuple<int32_t, std::string>>>();
 
         for (const auto& [srv_id, endpoint] : srvs) {
@@ -37,7 +37,9 @@ client::client(const std::string& host, uint16_t port) : clients_() {
             }
 
             auto checked_port = static_cast<uint16_t>(srv_port);
-            clients_.emplace(srv_id, rpc::client{srv_host, checked_port});
+            clients_.emplace(std::piecewise_construct,
+                             std::forward_as_tuple(srv_id),
+                             std::forward_as_tuple(srv_host, checked_port));
         }
 
         rpc::client& c = clients_.begin()->second;

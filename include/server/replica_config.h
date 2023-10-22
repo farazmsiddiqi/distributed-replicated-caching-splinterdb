@@ -17,7 +17,6 @@ struct replica_config {
           client_port_(25001),
           addr_("localhost"),
           asio_thread_pool_size_(4),
-          return_method_(nuraft::raft_params::blocking),
           snapshot_frequency_(0),
           initialization_delay_ms_(250),
           initialization_retries_(20),
@@ -26,7 +25,8 @@ struct replica_config {
           display_level_(LogLevel::WARNING),
           splinterdb_log_file_(std::nullopt),
           splinterdb_data_cfg_(splinterdb_data_cfg),
-          splinterdb_cfg_(splinterdb_cfg) {
+          splinterdb_cfg_(splinterdb_cfg),
+          return_method_(nuraft::raft_params::blocking) {
         splinterdb_cfg_.data_cfg = &splinterdb_data_cfg_;
     }
 

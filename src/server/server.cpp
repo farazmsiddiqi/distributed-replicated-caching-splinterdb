@@ -78,7 +78,7 @@ void server::initialize() {
         } else {
             rpc::this_handler().respond_error(
                 std::make_tuple("Invalid server id"));
-            return "";
+            return std::string{};
         }
     });
 

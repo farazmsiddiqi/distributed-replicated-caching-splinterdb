@@ -38,12 +38,12 @@ void replica::default_raft_params_init(raft_params& params) {
 }
 
 replica::replica(const replica_config& config)
-    : server_id_(config.server_id_),
+    : config_(config),
+      server_id_(config.server_id_),
       addr_(config.addr_),
       raft_port_(config.raft_port_),
       raft_endpoint_(addr_ + ":" + std::to_string(config.raft_port_)),
       client_endpoint_(addr_ + ":" + std::to_string(config_.client_port_)),
-      config_(config),
       logger_(nullptr),
       spl_log_file_(nullptr),
       sm_(nullptr),

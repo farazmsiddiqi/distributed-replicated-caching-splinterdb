@@ -73,7 +73,8 @@ int main(int argc, char** argv) {
     replica_config replica_cfg{splinter_data_cfg, splinterdb_cfg};
     replica_cfg.server_id_ = FLAGS_serverid;
     replica_cfg.addr_ = "localhost";
-    replica_cfg.port_ = FLAGS_raftport;
+    replica_cfg.raft_port_ = FLAGS_raftport;
+    replica_cfg.client_port_ = FLAGS_clientport;
 
     replica_cfg.log_level_ = LogLevel::TRACE;
     replica_cfg.display_level_ = LogLevel::DISABLED;
