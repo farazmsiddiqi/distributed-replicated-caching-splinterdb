@@ -20,22 +20,36 @@ static bool validate_port(const char* flagname, int32 value) {
     return false;
 }
 
+static bool validate_nthreads(const char* flagname, int64 value) {
+    if (value >= 4 && value <= 50) {  // value is ok
+        return true;
+    }
+
+    fprintf(stderr, "ERROR: Invalid value for -%s (%d)", flagname, (int)value);
+    fprintf(stderr, ": must use between 4 and 50 threads\n");
+    return false;
+}
+
 // Server initialization flags
 DEFINE_int32(serverid, -1, "The ID of the server");
 DEFINE_int32(
     raftport, 10001,
     "The port over which communication for replication should take place");
-DEFINE_int32(clientport, 10002,
-             "The port over which client communication should take place");
-DEFINE_int32(joinport, 10003,
+DEFINE_int32(joinport, 10002,
              "The port over which replica server joining communication should "
              "take place");
-DEFINE_string(join_endpoint, "",
-              "The endpoint of the seed replica server to join");
+DEFINE_int32(clientport, 10003,
+             "The port over which client communication should take place");
+DEFINE_string(seed, "",
+              "The endpoint of the seed replica server that will introduce "
+              "this server to the cluster. If empty, this server will start a "
+              "new cluster.");
+DEFINE_int64(nthreads, 4, "The number of threads to use for RPC handling");
 
 DEFINE_validator(raftport, &validate_port);
 DEFINE_validator(clientport, &validate_port);
 DEFINE_validator(joinport, &validate_port);
+DEFINE_validator(nthreads, &validate_nthreads);
 
 // SplinterDB initialization flags
 DEFINE_uint64(dbfilesize, 1024,
@@ -51,9 +65,9 @@ using replicated_splinterdb::replica_config;
 using replicated_splinterdb::server;
 
 static void try_join_cluster(const replica_config& cfg) {
-    auto delim = FLAGS_join_endpoint.find(':');
-    std::string join_srv_host = FLAGS_join_endpoint.substr(0, delim);
-    int join_srv_port = std::stoi(FLAGS_join_endpoint.substr(delim + 1));
+    auto delim = FLAGS_seed.find(':');
+    std::string join_srv_host = FLAGS_seed.substr(0, delim);
+    int join_srv_port = std::stoi(FLAGS_seed.substr(delim + 1));
 
     if (1 > join_srv_port || join_srv_port > 65535) {
         std::string msg = "invalid port number for host \"" + join_srv_host +
@@ -64,8 +78,8 @@ static void try_join_cluster(const replica_config& cfg) {
     auto checked_port = static_cast<uint16_t>(join_srv_port);
     rpc::client cl{join_srv_host, checked_port};
 
-    std::cout << "Attempting to join cluster at " << FLAGS_join_endpoint
-              << " ... " << std::flush;
+    std::cout << "Attempting to join cluster at " << FLAGS_seed << " ... "
+              << std::flush;
 
     auto [rc, msg] = cl.call(RPC_JOIN_REPLICA_GROUP, cfg.server_id_,
                              cfg.addr_ + ":" + std::to_string(cfg.raft_port_),
@@ -123,11 +137,11 @@ int main(int argc, char** argv) {
     std::cout << "Listening for replication RPCs on port " << cfg.raft_port_
               << "..." << std::endl;
 
-    if (!FLAGS_join_endpoint.empty()) {
+    if (!FLAGS_seed.empty()) {
         try_join_cluster(cfg);
     }
 
-    s.run();
+    s.run(FLAGS_nthreads);
 
     return 0;
 }

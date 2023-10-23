@@ -5,7 +5,10 @@
 #include "client/client.h"
 
 DEFINE_string(endpoint, "", "server endpoint formatted as <host>:<port>");
-DEFINE_string(e, "", "One time command to execute (non-interactive mode)");
+DEFINE_string(e, "",
+              "One time command to execute in non-interactive mode. If this "
+              "argument is empty, the client will run in interactive mode. "
+              "Format: <command> <arg1> <arg2> ...");
 
 #ifndef _CLM_DEFINED
 #define _CLM_DEFINED (1)

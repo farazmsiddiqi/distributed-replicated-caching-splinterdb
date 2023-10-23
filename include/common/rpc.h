@@ -10,8 +10,6 @@
 #define RPC_GET_LEADER_ID "get_leader_id"
 #define RPC_GET_ALL_SERVERS "get_all_servers"
 #define RPC_GET_SRV_ENDPOINT "get_srv_endpoint"
-
-// SplinterDB server RPCs
 #define RPC_SPLINTERDB_GET "splinterdb_get"
 #define RPC_SPLINTERDB_PUT "splinterdb_put"
 #define RPC_SPLINTERDB_UPDATE "splinterdb_update"

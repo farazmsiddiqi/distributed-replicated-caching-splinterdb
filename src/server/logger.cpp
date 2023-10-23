@@ -1152,12 +1152,12 @@ bool SimpleLogger::flush(size_t start_pos) {
     size_t num = logs.size();
     // Circular flush into file.
     for (size_t ii = start_pos; ii < num; ++ii) {
-        LogElem& ll = logs[ii];
-        ll.flush(fs);
+        LogElem& elem = logs[ii];
+        elem.flush(fs);
     }
     for (size_t ii = 0; ii < start_pos; ++ii) {
-        LogElem& ll = logs[ii];
-        ll.flush(fs);
+        LogElem& elem = logs[ii];
+        elem.flush(fs);
     }
     fs.flush();
 

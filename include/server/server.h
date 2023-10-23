@@ -20,7 +20,7 @@ class server {
 
     server(uint16_t client_port, uint16_t join_port, const replica_config& cfg);
 
-    void run();
+    void run(uint64_t nthreads);
 
   private:
     replica replica_instance_;

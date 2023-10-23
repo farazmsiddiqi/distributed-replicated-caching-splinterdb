@@ -23,8 +23,8 @@ server::~server() {
     replica_instance_.shutdown(5);
 }
 
-void server::run() {
-    client_srv_.async_run(4);
+void server::run(uint64_t nthreads) {
+    client_srv_.async_run(static_cast<size_t>(nthreads));
     std::cout << "Listening for client RPCs on port " << client_srv_.port()
               << std::endl;
 
