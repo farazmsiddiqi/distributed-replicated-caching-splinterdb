@@ -31,3 +31,13 @@ You will need to restart the container if you make changes to the `libnuraft` an
     - [ ] dump cache
 - [ ] [LATER] YCSB binding to client API
 - [x] Examine cache and dump to file/stderr/stdout
+
+
+# Starting:
+```
+./spl-server -serverid 1 -raftport 10000 -joinport 10001 -clientport 10002
+
+./spl-server -serverid 2 -raftport 10003 -joinport 10004 -clientport 10005 -join_endpoint localhost:10001
+
+./spl-server -serverid 3 -raftport 10006 -joinport 10007 -clientport 10008 -join_endpoint localhost:10001
+```

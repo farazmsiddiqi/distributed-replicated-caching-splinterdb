@@ -10,7 +10,7 @@ SRC_DIR 	= src
 APPS_DIR 	= apps
 INCLUDE_DIR = include
 
-dev: dev-image
+dev: $(IMAGE_BUILD_ENV)
 	docker run -it --rm \
 		-v `pwd`/include:/work/include \
 		-v `pwd`/apps:/work/apps \
@@ -21,20 +21,20 @@ dev: dev-image
 		-v `pwd`/.cache:/cachepages \
 		$(IMAGE_BUILD_ENV)
 
-run: run-image
+run: $(IMAGE_RUN_ENV)
 	docker run -it --network="host" --rm $(IMAGE_RUN_ENV)
 
-dev-image: dev-base-image
-	docker build -t $(IMAGE_BUILD_ENV) -f Dockerfile.dev .
+$(IMAGE_BUILD_ENV): $(IMAGE_BUILD_ENV_BASE)
+	docker build -t $@ -f Dockerfile.dev .
 
-run-image: dev-base-image run-base-image
-	docker build -t $(IMAGE_RUN_ENV) -f Dockerfile.run .
+$(IMAGE_RUN_ENV): $(IMAGE_BUILD_ENV_BASE) $(IMAGE_RUN_ENV_BASE)
+	docker build -t $@ -f Dockerfile.run .
 
-dev-base-image:
-	docker build -t $(IMAGE_BUILD_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.build-env $(SPLINTERDB_ROOT)
+$(IMAGE_BUILD_ENV_BASE):
+	docker build -t $@ -f $(SPLINTERDB_ROOT)/Dockerfile.build-env $(SPLINTERDB_ROOT)
 
-run-base-image:
-	docker build -t $(IMAGE_RUN_ENV_BASE) -f $(SPLINTERDB_ROOT)/Dockerfile.run-env $(SPLINTERDB_ROOT)
+$(IMAGE_RUN_ENV_BASE):
+	docker build -t $@ -f $(SPLINTERDB_ROOT)/Dockerfile.run-env $(SPLINTERDB_ROOT)
 
 format:
 	find $(APPS_DIR) $(INCLUDE_DIR) $(SRC_DIR) \

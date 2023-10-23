@@ -36,3 +36,5 @@ COPY --from=build /work/libs/libsplinterdb.so ${LIBS_DIR}
 COPY --from=build /work/build/apps /apps
 
 WORKDIR /apps
+
+ENTRYPOINT [ "/apps/spl-server" ]

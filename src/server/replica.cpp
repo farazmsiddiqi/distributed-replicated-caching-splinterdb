@@ -92,12 +92,8 @@ void replica::initialize() {
 
     asio_service::options asio_opt;
     asio_opt.thread_pool_size_ = config_.asio_thread_pool_size_;
-    // asio_opt.worker_start_ = [](uint32_t) {
-    //     std::cout << "starting thread" << std::endl;
-    // };
-    // asio_opt.worker_stop_ = [](uint32_t) {
-    //     std::cout << "stopping thread" << std::endl;
-    // };
+    // asio_opt.worker_start_ = [](uint32_t) { };
+    // asio_opt.worker_stop_ = [](uint32_t) { };
 
     raft_instance_ =
         launcher_.init(sm_, smgr_, logger_, raft_port_, asio_opt, params);
@@ -111,7 +107,7 @@ void replica::initialize() {
     }
 
     // Wait until Raft server is ready (up to 5 seconds).
-    std::cout << "initializing Raft instance ";
+    std::cout << "Initializing Raft instance ";
     for (size_t ii = 0; ii < config_.initialization_retries_; ++ii) {
         if (raft_instance_->is_initialized()) {
             std::cout << " done" << std::endl;

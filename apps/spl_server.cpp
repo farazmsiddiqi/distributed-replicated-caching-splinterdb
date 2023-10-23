@@ -1,9 +1,12 @@
 #include <gflags/gflags.h>
+#include <unistd.h>
 
 #include <cstring>
 #include <iostream>
 
+#include "common/rpc.h"
 #include "replica_config.h"
+#include "rpc/client.h"
 #include "server.h"
 #include "splinterdb_wrapper.h"
 
@@ -17,6 +20,7 @@ static bool validate_port(const char* flagname, int32 value) {
     return false;
 }
 
+// Server initialization flags
 DEFINE_int32(serverid, -1, "The ID of the server");
 DEFINE_int32(
     raftport, 10001,
@@ -33,15 +37,47 @@ DEFINE_validator(raftport, &validate_port);
 DEFINE_validator(clientport, &validate_port);
 DEFINE_validator(joinport, &validate_port);
 
-#define DB_FILE_SIZE_MB 1024  // Size of SplinterDB device; Fixed when created
-#define CACHE_SIZE_MB 64      // Size of cache; can be changed across boots
-
-/* Application declares the limit of key-sizes it intends to use */
-#define USER_MAX_KEY_SIZE ((int)100)
+// SplinterDB initialization flags
+DEFINE_uint64(dbfilesize, 1024,
+              "The size of the SplinterDB device (in MB); fixed when created");
+DEFINE_uint64(cachesize, 64,
+              "The size of the cache (in MB); can be changed across boots");
+DEFINE_uint64(
+    maxkeysize, 100,
+    "The maximum size of a key (in bytes) that can be stored in SplinterDB");
 
 using replicated_splinterdb::LogLevel;
 using replicated_splinterdb::replica_config;
 using replicated_splinterdb::server;
+
+static void try_join_cluster(const replica_config& cfg) {
+    auto delim = FLAGS_join_endpoint.find(':');
+    std::string join_srv_host = FLAGS_join_endpoint.substr(0, delim);
+    int join_srv_port = std::stoi(FLAGS_join_endpoint.substr(delim + 1));
+
+    if (1 > join_srv_port || join_srv_port > 65535) {
+        std::string msg = "invalid port number for host \"" + join_srv_host +
+                          "\": " + std::to_string(join_srv_port);
+        throw std::runtime_error(msg);
+    }
+
+    auto checked_port = static_cast<uint16_t>(join_srv_port);
+    rpc::client cl{join_srv_host, checked_port};
+
+    std::cout << "Attempting to join cluster at " << FLAGS_join_endpoint
+              << " ... " << std::flush;
+
+    auto [rc, msg] = cl.call(RPC_JOIN_REPLICA_GROUP, cfg.server_id_,
+                             cfg.addr_ + ":" + std::to_string(cfg.raft_port_),
+                             cfg.addr_ + ":" + std::to_string(cfg.client_port_))
+                         .as<std::tuple<int32_t, std::string>>();
+    std::cout << msg << " (rc=" << rc << ")" << std::endl;
+
+    if (rc != 0) {
+        std::cerr << "ERROR: failed to join cluster: " << msg << std::endl;
+        exit(1);
+    }
+}
 
 int main(int argc, char** argv) {
     gflags::SetUsageMessage(
@@ -54,32 +90,43 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    uint16_t raft_port = static_cast<uint16_t>(FLAGS_raftport);
     uint16_t client_port = static_cast<uint16_t>(FLAGS_clientport);
     uint16_t join_port = static_cast<uint16_t>(FLAGS_joinport);
 
     // Initialize data configuration, using default key-comparison handling.
     data_config splinter_data_cfg;
-    default_data_config_init(USER_MAX_KEY_SIZE, &splinter_data_cfg);
+    default_data_config_init(FLAGS_maxkeysize, &splinter_data_cfg);
 
     // Basic configuration of a SplinterDB instance
     splinterdb_config splinterdb_cfg;
     memset(&splinterdb_cfg, 0, sizeof(splinterdb_cfg));
     std::string dbname = "sm-state-" + std::to_string(FLAGS_serverid) + ".db";
     splinterdb_cfg.filename = dbname.c_str();
-    splinterdb_cfg.disk_size = (DB_FILE_SIZE_MB * 1024 * 1024);
-    splinterdb_cfg.cache_size = (CACHE_SIZE_MB * 1024 * 1024);
+    splinterdb_cfg.disk_size = (FLAGS_dbfilesize * 1024 * 1024);
+    splinterdb_cfg.cache_size = (FLAGS_cachesize * 1024 * 1024);
     splinterdb_cfg.data_cfg = &splinter_data_cfg;
 
-    replica_config replica_cfg{splinter_data_cfg, splinterdb_cfg};
-    replica_cfg.server_id_ = FLAGS_serverid;
-    replica_cfg.addr_ = "localhost";
-    replica_cfg.raft_port_ = FLAGS_raftport;
-    replica_cfg.client_port_ = FLAGS_clientport;
+    replica_config cfg{splinter_data_cfg, splinterdb_cfg};
+    cfg.server_id_ = FLAGS_serverid;
 
-    replica_cfg.log_level_ = LogLevel::TRACE;
-    replica_cfg.display_level_ = LogLevel::DISABLED;
+    char hostnamebuf[100];
+    gethostname(hostnamebuf, sizeof(hostnamebuf));
+    cfg.addr_ = hostnamebuf;
+    cfg.raft_port_ = raft_port;
+    cfg.client_port_ = client_port;
 
-    server s{client_port, join_port, replica_cfg};
+    cfg.log_level_ = LogLevel::TRACE;
+    cfg.display_level_ = LogLevel::DISABLED;
+
+    server s{client_port, join_port, cfg};
+    std::cout << "Listening for replication RPCs on port " << cfg.raft_port_
+              << "..." << std::endl;
+
+    if (!FLAGS_join_endpoint.empty()) {
+        try_join_cluster(cfg);
+    }
+
     s.run();
 
     return 0;

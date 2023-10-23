@@ -1,5 +1,7 @@
 #include "server/server.h"
 
+#include <iostream>
+
 #include "common/rpc.h"
 #include "common/types.h"
 
@@ -23,7 +25,12 @@ server::~server() {
 
 void server::run() {
     client_srv_.async_run(4);
+    std::cout << "Listening for client RPCs on port " << client_srv_.port()
+              << std::endl;
+
     join_srv_.run();
+    std::cout << "Listening for cluster join RPCs on port " << join_srv_.port()
+              << std::endl;
 }
 
 static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
@@ -39,11 +46,14 @@ static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
 }
 
 void server::initialize() {
-    join_srv_.bind(RPC_JOIN_REPLICA_GROUP, [this](int32_t server_id,
-                                                  std::string raft_endpoint,
-                                                  std::string client_endpoint) {
-        replica_instance_.add_server(server_id, raft_endpoint, client_endpoint);
-    });
+    // (int32_t, std::string, std::string) -> (int32_t, std::string)
+    join_srv_.bind(RPC_JOIN_REPLICA_GROUP,
+                   [this](int32_t server_id, std::string raft_endpoint,
+                          std::string client_endpoint) {
+                       auto [rc, msg] = replica_instance_.add_server(
+                           server_id, raft_endpoint, client_endpoint);
+                       return std::make_tuple(static_cast<int32_t>(rc), msg);
+                   });
 
     // void -> std::string
     client_srv_.bind(RPC_PING, []() { return "pong"; });

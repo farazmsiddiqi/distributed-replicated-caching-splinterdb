@@ -99,8 +99,6 @@ void splinterdb_log_store::write_at(uint64_t index, ptr<log_entry>& entry) {
     uint64_t old_last_idx = last_idx_;
     last_idx_ = index - 1;
 
-    std::cout << "Writing log entry at index " << index << std::endl;
-
     std::vector<uint64_t> to_delete(old_last_idx - index + 1);
     std::iota(std::begin(to_delete), std::end(to_delete), index);
 
@@ -144,7 +142,6 @@ ptr<log_entry> splinterdb_log_store::entry_at(uint64_t index) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(spl_, &result, 0, NULL);
 
-    std::cout << "Get log entry at index " << index << std::endl;
     slice key = log_key_create(index);
 
     int rc = splinterdb_lookup(spl_, key, &result);
