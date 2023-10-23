@@ -28,9 +28,10 @@ void server::run(uint64_t nthreads) {
     std::cout << "Listening for client RPCs on port " << client_srv_.port()
               << std::endl;
 
-    join_srv_.run();
     std::cout << "Listening for cluster join RPCs on port " << join_srv_.port()
               << std::endl;
+
+    join_srv_.run();
 }
 
 static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {

@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "client/read_policy.h"
 #include "common/types.h"
 #include "rpc/client.h"
 
@@ -16,7 +17,8 @@ class client {
 
     client& operator=(const client&) = delete;
 
-    client(const std::string& host, uint16_t port, uint16_t num_retries = 3);
+    client(const std::string& host, uint16_t port, uint64_t timeout_ms = 3000,
+           uint16_t num_retries = 3);
 
     rpc_read_result get(const std::vector<uint8_t>& key);
 
@@ -34,6 +36,7 @@ class client {
 
   private:
     std::map<int32_t, rpc::client> clients_;
+    std::unique_ptr<read_policy> read_policy_;
     int32_t leader_id_;
     const uint16_t num_retries_;
 

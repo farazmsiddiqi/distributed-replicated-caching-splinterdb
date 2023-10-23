@@ -7,12 +7,12 @@
 
 namespace replicated_splinterdb {
 
-client::client(const std::string& host, uint16_t port, uint16_t num_retries)
-    : clients_(), num_retries_(num_retries) {
+client::client(const std::string& host, uint16_t port, uint64_t timeout_ms,
+               uint16_t num_retries)
+    : clients_(), read_policy_(nullptr), num_retries_(num_retries) {
     rpc::client cl{host, port};
 
     std::vector<std::tuple<int32_t, std::string>> srvs;
-
     try {
         if (cl.call(RPC_PING).as<std::string>() != "pong") {
             throw std::runtime_error("server returned unexpected response");
@@ -50,9 +50,13 @@ client::client(const std::string& host, uint16_t port, uint16_t num_retries)
         }
     }
 
+    std::vector<int32_t> srv_ids;
     for (auto& [srv_id, c] : clients_) {
-        c.set_timeout(5000);
+        c.set_timeout(static_cast<int64_t>(timeout_ms));
+        srv_ids.push_back(srv_id);
     }
+
+    read_policy_ = std::make_unique<round_robin_read_policy>(srv_ids);
 }
 
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
@@ -68,12 +72,10 @@ bool client::try_handle_leader_change(int32_t raft_result_code) {
 }
 
 // TODOs:
-// 1. retry on failures
-// 2. if failure is result of not being leader, query leader and try with them
 // 3. implement round robin read policy
 // 4. implement latency-based read policy?
 rpc_read_result client::get(const std::vector<uint8_t>& key) {
-    return clients_.begin()
+    return clients_.find(read_policy_->next_server())
         ->second.call(RPC_SPLINTERDB_GET, key)
         .as<rpc_read_result>();
 }
@@ -86,9 +88,9 @@ rpc_mutation_result client::put(const std::vector<uint8_t>& key,
                      .call(RPC_SPLINTERDB_PUT, key, value)
                      .as<rpc_mutation_result>();
 
-        if (std::get<1>(result) == 0) {
+        if (was_accepted(result)) {
             break;
-        } else if (try_handle_leader_change(std::get<1>(result))) {
+        } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
             std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
         }
     }
@@ -98,25 +100,66 @@ rpc_mutation_result client::put(const std::vector<uint8_t>& key,
 
 rpc_mutation_result client::update(const std::vector<uint8_t>& key,
                                    const std::vector<uint8_t>& value) {
-    return get_leader_handle()
-        .call(RPC_SPLINTERDB_UPDATE, key, value)
-        .as<rpc_mutation_result>();
+    rpc_mutation_result result;
+    for (uint16_t i = 0; i < num_retries_; ++i) {
+        result = get_leader_handle()
+                     .call(RPC_SPLINTERDB_UPDATE, key, value)
+                     .as<rpc_mutation_result>();
+
+        if (was_accepted(result)) {
+            break;
+        } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
+            std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
+        }
+    }
+
+    return result;
 }
 
 rpc_mutation_result client::del(const std::vector<uint8_t>& key) {
-    return get_leader_handle()
-        .call(RPC_SPLINTERDB_DELETE, key)
-        .as<rpc_mutation_result>();
+    rpc_mutation_result result;
+    for (uint16_t i = 0; i < num_retries_; ++i) {
+        result = get_leader_handle()
+                     .call(RPC_SPLINTERDB_DELETE, key)
+                     .as<rpc_mutation_result>();
+
+        if (was_accepted(result)) {
+            break;
+        } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
+            std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
+        }
+    }
+
+    return result;
 }
 
 std::vector<std::tuple<int32_t, std::string>> client::get_all_servers() {
-    return clients_.begin()
-        ->second.call(RPC_GET_ALL_SERVERS)
-        .as<std::vector<std::tuple<int32_t, std::string>>>();
+    for (auto& [srv_id, c] : clients_) {
+        try {
+            return c.call(RPC_GET_ALL_SERVERS)
+                .as<std::vector<std::tuple<int32_t, std::string>>>();
+        } catch (const std::exception& e) {
+            std::cerr << "WARNING: failed to connect to " << srv_id
+                      << " ... skipping. Reason:\n\t" << e.what() << std::endl;
+            continue;
+        }
+    }
+
+    throw std::runtime_error("failed to connect to any server");
 }
 
 int32_t client::get_leader_id() {
-    return clients_.begin()->second.call(RPC_GET_LEADER_ID).as<int32_t>();
+    for (auto& [srv_id, c] : clients_) {
+        try {
+            return c.call(RPC_GET_LEADER_ID).as<int32_t>();
+        } catch (const std::exception& e) {
+            std::cerr << "WARNING: failed to connect to " << srv_id
+                      << " ... skipping. Reason:\n\t" << e.what() << std::endl;
+            continue;
+        }
+    }
+
+    throw std::runtime_error("failed to connect to any server");
 }
 
 }  // namespace replicated_splinterdb

@@ -18,6 +18,12 @@ using rpc_read_result =
 using rpc_mutation_result =
     std::tuple<splinterdb_return_code, nuraft_return_code, nuraft_return_msg>;
 
+bool is_success(const rpc_mutation_result& result);
+
+nuraft_return_code get_nuraft_return_code(const rpc_mutation_result& result);
+
+bool was_accepted(const rpc_mutation_result& result);
+
 }  // namespace replicated_splinterdb
 
 #endif  // REPLICATED_SPLINTERDB_TYPES_H

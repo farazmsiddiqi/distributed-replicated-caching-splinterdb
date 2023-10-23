@@ -1,14 +1,12 @@
 #include <gflags/gflags.h>
 #include <unistd.h>
 
-#include <cstring>
 #include <iostream>
 
 #include "common/rpc.h"
 #include "replica_config.h"
 #include "rpc/client.h"
 #include "server.h"
-#include "splinterdb_wrapper.h"
 
 static bool validate_port(const char* flagname, int32 value) {
     if (value > 0 && value < 32768) {  // value is ok
@@ -135,7 +133,7 @@ int main(int argc, char** argv) {
 
     server s{client_port, join_port, cfg};
     std::cout << "Listening for replication RPCs on port " << cfg.raft_port_
-              << "..." << std::endl;
+              << std::endl;
 
     if (!FLAGS_seed.empty()) {
         try_join_cluster(cfg);

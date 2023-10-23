@@ -2,11 +2,9 @@ file(GLOB SERVER_HEADER_LIST CONFIGURE_DEPENDS
     "${ReplicatedSplinterDB_SOURCE_DIR}/include/server/*.h"
     "${ReplicatedSplinterDB_SOURCE_DIR}/include/common/*.h")
 
-
-
 file(GLOB SERVER_SOURCE_LIST CONFIGURE_DEPENDS
-    "${ReplicatedSplinterDB_SOURCE_DIR}/src/server/*.cpp")
-
+    "${ReplicatedSplinterDB_SOURCE_DIR}/src/server/*.cpp"
+    "${ReplicatedSplinterDB_SOURCE_DIR}/src/common/*.cpp")
 
 # Make the static libraries that are to be linked to the main executables
 add_library(replicated-splinterdb-server STATIC ${SERVER_SOURCE_LIST} ${SERVER_HEADER_LIST})
