@@ -14,24 +14,23 @@ You will need to restart the container if you make changes to the `libnuraft` an
     - see [state machine example](third-party/nuraft/examples/calculator/calc_state_machine.hxx)
     - see [log store example](third-party/nuraft/examples/in_memory_log_store.hxx)
     - [x] state machine implementation
-    - [ ] log storage implementation
-    - state machine and log will individually will invoke splinterdb API on different DB instances (see [splinterdb API](third-party/splinterdb/include))
-- [ ] create a API for server
+- [x] create a API for server
     - Invokes the state machine API
-    - [ ] read
-    - [ ] update
-    - [ ] insert
-    - [ ] delete 
-    - [ ] dump cache (no-op for now)
-- [ ] create a client API
-    - [ ] read
-    - [ ] update
-    - [ ] insert
-    - [ ] delete 
-    - [ ] dump cache
-- [ ] [LATER] YCSB binding to client API
+    - [x] read
+    - [x] update
+    - [x] insert
+    - [x] delete 
+    - [x] dump cache (no-op for now)
+- [x] create a client API
+    - [x] read
+    - [x] update
+    - [x] insert
+    - [x] delete 
+    - [x] dump cache
+- [x] [LATER] YCSB binding to client API
 - [x] Examine cache and dump to file/stderr/stdout
-
+- [ ] Client cache reset API
+- [ ] YAML config parsing (see [yaml-cpp](https://github.com/jbeder/yaml-cpp/wiki/Tutorial))
 
 # Starting:
 ```

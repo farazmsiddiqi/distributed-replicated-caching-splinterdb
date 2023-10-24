@@ -25,8 +25,8 @@ using nuraft::srv_config;
 void replica::default_raft_params_init(raft_params& params) {
     // heartbeat: 100 ms, election timeout: 200 - 400 ms.
     params.heart_beat_interval_ = 100;
-    params.election_timeout_lower_bound_ = 200;
-    params.election_timeout_upper_bound_ = 400;
+    params.election_timeout_lower_bound_ = 300;
+    params.election_timeout_upper_bound_ = 600;
 
     // Up to 5 logs will be preserved ahead the last snapshot.
     params.reserved_log_items_ = 1000000;
@@ -56,12 +56,12 @@ replica::replica(const replica_config& config)
 
     // Set up Raft logging
     std::string raft_log_file_name = config_.raft_log_file_.value_or(
-        "./srv-" + std::to_string(server_id_) + ".log");
+        "/.logs/srv-" + std::to_string(server_id_) + ".log");
     nuraft::ptr<SimpleLogger> log =
         cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
     log->setLogLevel(config_.log_level_);
     log->setDispLevel(config_.display_level_);
-    log->setCrashDumpPath("./", true);
+    log->setCrashDumpPath("/.logs", true);
     log->start();
 
     logger_ = log;

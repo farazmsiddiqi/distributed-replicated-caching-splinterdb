@@ -17,7 +17,7 @@ class client {
 
     client& operator=(const client&) = delete;
 
-    client(const std::string& host, uint16_t port, uint64_t timeout_ms = 3000,
+    client(const std::string& host, uint16_t port, uint64_t timeout_ms = 10000,
            uint16_t num_retries = 3);
 
     rpc_read_result get(const std::vector<uint8_t>& key);

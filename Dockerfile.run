@@ -19,7 +19,7 @@ COPY include /work/include
 COPY apps /work/apps
 COPY src /work/src
 COPY CMakeLists.txt /work/CMakeLists.txt
-RUN cmake -DDISABLE_SSL=1 .. && make all spl-server spl-client
+RUN cmake -DDISABLE_SSL=1 .. && make all spl-server spl-client -j `nproc`
 
 FROM neilk3/splinterdb-run-env as run
 

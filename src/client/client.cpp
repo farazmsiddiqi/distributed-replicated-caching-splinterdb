@@ -1,12 +1,15 @@
 #include "client/client.h"
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 #include "common/rpc.h"
 
 // TODOS: Implement latency-based read policy
 
-#define NOT_LEADER (-3)
+#define GET_LEADER_NO_LIVE_LEADER (-1)
+#define CMD_RESULT_NOT_LEADER (-3)
 
 namespace replicated_splinterdb {
 
@@ -71,8 +74,12 @@ void client::dump_cache() {
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
 
 bool client::try_handle_leader_change(int32_t raft_result_code) {
-    if (raft_result_code == NOT_LEADER) {
+    if (raft_result_code == CMD_RESULT_NOT_LEADER) {
+        int32_t old_leader_id = leader_id_;
         leader_id_ = get_leader_id();
+
+        std::cerr << "INFO: leader changed from " << old_leader_id << " to "
+                  << leader_id_ << std::endl; 
         return true;
     }
 
@@ -96,7 +103,7 @@ rpc_mutation_result client::put(const std::vector<uint8_t>& key,
         if (was_accepted(result)) {
             break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
-            std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
+            std::cerr << "WARNING: leader changed, retrying..." << std::endl;
         }
     }
 
@@ -114,7 +121,7 @@ rpc_mutation_result client::update(const std::vector<uint8_t>& key,
         if (was_accepted(result)) {
             break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
-            std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
+            std::cerr << "WARNING: leader changed, retrying..." << std::endl;
         }
     }
 
@@ -131,7 +138,7 @@ rpc_mutation_result client::del(const std::vector<uint8_t>& key) {
         if (was_accepted(result)) {
             break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
-            std::cerr << "\nWARNING: leader changed, retrying..." << std::endl;
+            std::cerr << "WARNING: leader changed, retrying..." << std::endl;
         }
     }
 
@@ -154,12 +161,30 @@ std::vector<std::tuple<int32_t, std::string>> client::get_all_servers() {
 }
 
 int32_t client::get_leader_id() {
+    size_t delay_ms = 100;
     for (auto& [srv_id, c] : clients_) {
         try {
-            return c.call(RPC_GET_LEADER_ID).as<int32_t>();
+            for (uint16_t i = 0; i < num_retries_; ++i) {
+                int32_t leader_id = c.call(RPC_GET_LEADER_ID).as<int32_t>();
+                if (leader_id != GET_LEADER_NO_LIVE_LEADER) {
+                    return leader_id;
+                }
+
+                std::cerr << "WARNING: no live leader, retrying..."
+                          << std::endl;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+                delay_ms *= 2;
+            }
+
+            throw std::runtime_error("no live leader");
         } catch (const std::exception& e) {
             std::cerr << "WARNING: failed to connect to " << srv_id
-                      << " ... skipping. Reason:\n\t" << e.what() << std::endl;
+                      << " ... skipping. Reason: " << e.what() << std::endl;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+            delay_ms *= 2;
+
             continue;
         }
     }
