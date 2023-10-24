@@ -4,6 +4,8 @@
 
 #include "common/rpc.h"
 
+// TODOS: Implement latency-based read policy
+
 #define NOT_LEADER (-3)
 
 namespace replicated_splinterdb {
@@ -60,6 +62,12 @@ client::client(const std::string& host, uint16_t port, uint64_t timeout_ms,
     read_policy_ = std::make_unique<round_robin_read_policy>(srv_ids);
 }
 
+void client::dump_cache() {
+    for (auto& [_, c] : clients_) {
+        c.call(RPC_SPLINTERDB_DUMPCACHE);
+    }
+}
+
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
 
 bool client::try_handle_leader_change(int32_t raft_result_code) {
@@ -71,9 +79,6 @@ bool client::try_handle_leader_change(int32_t raft_result_code) {
     return false;
 }
 
-// TODOs:
-// 3. implement round robin read policy
-// 4. implement latency-based read policy?
 rpc_read_result client::get(const std::vector<uint8_t>& key) {
     return clients_.find(read_policy_->next_server())
         ->second.call(RPC_SPLINTERDB_GET, key)

@@ -56,6 +56,10 @@ void server::initialize() {
                        return std::make_tuple(static_cast<int32_t>(rc), msg);
                    });
 
+    // void -> void
+    client_srv_.bind(RPC_SPLINTERDB_DUMPCACHE,
+                     [this]() { replica_instance_.dump_cache(); });
+
     // void -> std::string
     client_srv_.bind(RPC_PING, []() { return "pong"; });
 

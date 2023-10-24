@@ -128,6 +128,10 @@ void replica::shutdown(size_t time_limit_sec) {
     launcher_.shutdown(time_limit_sec);
 }
 
+void replica::dump_cache() {
+    splinterdb_print_cache(sm_->get_splinterdb_handle());
+}
+
 std::pair<owned_slice, int32_t> replica::read(slice&& key) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,
