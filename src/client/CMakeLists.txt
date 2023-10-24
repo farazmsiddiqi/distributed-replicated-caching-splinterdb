@@ -10,8 +10,8 @@ file(GLOB CLIENT_SOURCE_LIST CONFIGURE_DEPENDS
 # Make the static libraries that are to be linked to the main executables
 add_library(replicated-splinterdb-client STATIC ${CLIENT_SOURCE_LIST} ${CLIENT_HEADER_LIST})
 
-# All users of these libraries will need at least C++20
-target_compile_features(replicated-splinterdb-client PUBLIC cxx_std_20)
+# All users of these libraries will need at least C++17
+target_compile_features(replicated-splinterdb-client PUBLIC cxx_std_17)
 
 # Add a bunch of warnings for the library build
 target_compile_options(

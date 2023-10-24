@@ -9,7 +9,7 @@ set(CMAKE_BUILD_TYPE Release)
 
 # Let's ensure -std=c++xx instead of -std=g++xx
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 # Import library shared objects and include directories
 link_directories("${CMAKE_SOURCE_DIR}/libs")
