@@ -45,6 +45,6 @@ for i in $(seq 2 $NODE_COUNT); do
         -raftport 10001 \
         -joinport 10002 \
         -clientport 10003 \
-        -join_endpoint replicated-splinterdb-node-1:10002
+        -seed replicated-splinterdb-node-1:10002
     set +e
 done

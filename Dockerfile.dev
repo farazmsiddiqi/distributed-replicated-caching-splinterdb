@@ -10,7 +10,7 @@ ENV LD clang++-13
 ENV LIBS_DIR /work/libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
-COPY third-party/nuraft /work/nuraft
-COPY third-party/rpclib /work/rpclib
+COPY third-party/nuraft /work/third-party/nuraft
+COPY third-party/rpclib /work/third-party/rpclib
 
 WORKDIR /work/build

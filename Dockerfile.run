@@ -10,18 +10,16 @@ ENV LD clang++-13
 ENV LIBS_DIR /work/libs/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
-COPY third-party/nuraft /work/nuraft
-COPY third-party/rpclib /work/rpclib
-COPY third-party/splinterdb /work/splinterdb
-WORKDIR /work/splinterdb
+COPY third-party/ /work/third-party/
+WORKDIR /work/third-party/splinterdb
 RUN make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR}
 
 WORKDIR /work/build
 COPY include /work/include
 COPY apps /work/apps
 COPY src /work/src
-COPY docker/CMakeLists.txt /work/CMakeLists.txt
-RUN cmake -DDISABLE_SSL=1 .. && make
+COPY CMakeLists.txt /work/CMakeLists.txt
+RUN cmake -DDISABLE_SSL=1 .. && make all spl-server spl-client
 
 FROM neilk3/splinterdb-run-env as run
 
