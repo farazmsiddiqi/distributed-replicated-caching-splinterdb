@@ -3,7 +3,8 @@
 #include <iostream>
 
 #include "common/rpc.h"
-#include "libnuraft/async.hxx"
+
+#define NOT_LEADER (-3)
 
 namespace replicated_splinterdb {
 
@@ -62,8 +63,7 @@ client::client(const std::string& host, uint16_t port, uint64_t timeout_ms,
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
 
 bool client::try_handle_leader_change(int32_t raft_result_code) {
-    auto rc = static_cast<nuraft::cmd_result_code>(raft_result_code);
-    if (rc == nuraft::cmd_result_code::NOT_LEADER) {
+    if (raft_result_code == NOT_LEADER) {
         leader_id_ = get_leader_id();
         return true;
     }
