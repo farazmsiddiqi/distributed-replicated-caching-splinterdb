@@ -4,6 +4,3 @@
 [submodule "third-party/splinterdb"]
 	path = third-party/splinterdb
 	url = https://github.com/nkaush/splinterdb.git
-[submodule "third-party/rpclib"]
-	path = third-party/rpclib
-	url = https://github.com/rpclib/rpclib.git
