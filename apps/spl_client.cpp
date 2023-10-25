@@ -108,6 +108,9 @@ static bool handle_command(client& c, const std::vector<std::string>& tokens) {
         }
 
         return true;
+    } else if (cmd == "dumpcache") {
+        c.trigger_cache_dumps();
+        return true;
     } else if (cmd == "help") {
         std::cout << "Commands:" << std::endl;
         std::cout << "  put <key> <value>" << std::endl;
@@ -115,6 +118,7 @@ static bool handle_command(client& c, const std::vector<std::string>& tokens) {
         std::cout << "  delete <key>" << std::endl;
         std::cout << "  get <key>" << std::endl;
         std::cout << "  ls" << std::endl;
+        std::cout << "  dumpcache" << std::endl;
         std::cout << "  help" << std::endl;
         std::cout << "  exit (interactive mode only)" << std::endl;
 

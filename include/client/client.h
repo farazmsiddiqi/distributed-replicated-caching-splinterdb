@@ -30,7 +30,7 @@ class client {
 
     rpc_mutation_result del(const std::vector<uint8_t>& key);
 
-    void dump_cache();
+    void trigger_cache_dumps();
 
     std::vector<std::tuple<int32_t, std::string>> get_all_servers();
 
