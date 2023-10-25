@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
+if [[ ! $1 ]]; then
+    echo "Usage: $0 <cache size (MiB)>"
+    exit 1
+fi
+
 NODE_COUNT=3
+NSERVER_THREADS=10
+CACHESIZE=$1
 SERVER_IMAGE="neilk3/replicated-splinterdb"
 NETWORK="splinterdb-network"
 
@@ -21,6 +28,7 @@ echo -n "Creating Docker network. Hash: "
 docker network create $NETWORK
 
 CACHEDIR=$PWD/caches/node-1
+rm -rf $CACHEDIR
 mkdir -p $CACHEDIR
 
 echo -n "Starting replicated-splinterdb node 1. Hash: "
@@ -33,7 +41,10 @@ docker run --rm -d \
     -serverid 1 \
     -raftport 10001 \
     -joinport 10002 \
-    -clientport 10003
+    -clientport 10003 \
+    -nthreads $NSERVER_THREADS \
+    -dbfilesize 2048 \
+    -cachesize $CACHESIZE
 
 echo "Mounted directory ($CACHEDIR) on host to /cachepages of container"
 
@@ -44,6 +55,7 @@ for i in $(seq 2 $NODE_COUNT); do
     set -e
 
     CACHEDIR=$PWD/caches/node-$i
+    rm -rf $CACHEDIR
     mkdir -p $CACHEDIR
 
     docker run --rm -d \
@@ -56,7 +68,10 @@ for i in $(seq 2 $NODE_COUNT); do
         -raftport 10001 \
         -joinport 10002 \
         -clientport 10003 \
-        -seed replicated-splinterdb-node-1:10002
+        -nthreads $NSERVER_THREADS \
+        -seed replicated-splinterdb-node-1:10002 \
+        -dbfilesize 2048 \
+        -cachesize $CACHESIZE
 
     echo "Mounted directory ($CACHEDIR) on host to /cachepages of container"
 
