@@ -10,6 +10,8 @@
 
 #define GET_LEADER_NO_LIVE_LEADER (-1)
 #define CMD_RESULT_NOT_LEADER (-3)
+#define CMD_RESULT_REQUEST_CANCELLED (-1)
+#define CMD_RESULT_WEIRD_CASE (999)
 
 namespace replicated_splinterdb {
 
@@ -78,8 +80,8 @@ void client::trigger_cache_dumps() {
 
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
 
-bool client::try_handle_leader_change(int32_t raft_result_code) {
-    if (raft_result_code == CMD_RESULT_NOT_LEADER) {
+bool client::try_handle_leader_change(int32_t raft_rc) {
+    if (raft_rc == CMD_RESULT_NOT_LEADER || raft_rc == CMD_RESULT_REQUEST_CANCELLED) {
         int32_t old_leader_id = leader_id_;
         leader_id_ = get_leader_id();
 
@@ -107,8 +109,15 @@ rpc_mutation_result client::put(const std::vector<uint8_t>& key,
 
         if (was_accepted(result)) {
             break;
+        } else if (get_nuraft_return_code(result) == CMD_RESULT_WEIRD_CASE) {
+            std::string k(key.begin(), key.end());
+            std::cout << "WARNING: weird case. Verify that the key exists: "
+                      << k << std::endl;
+            std::get<1>(result) = 0;
+            break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
             std::cerr << "WARNING: leader changed, retrying..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
@@ -125,8 +134,15 @@ rpc_mutation_result client::update(const std::vector<uint8_t>& key,
 
         if (was_accepted(result)) {
             break;
+        } else if (get_nuraft_return_code(result) == CMD_RESULT_WEIRD_CASE) {
+            std::string k(key.begin(), key.end());
+            std::cout << "WARNING: weird case. Verify that the key exists: "
+                      << k << std::endl;
+            std::get<1>(result) = 0;
+            break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
             std::cerr << "WARNING: leader changed, retrying..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
@@ -142,8 +158,15 @@ rpc_mutation_result client::del(const std::vector<uint8_t>& key) {
 
         if (was_accepted(result)) {
             break;
+        } else if (get_nuraft_return_code(result) == CMD_RESULT_WEIRD_CASE) {
+            std::string k(key.begin(), key.end());
+            std::cout << "WARNING: weird case. Verify that the key exists: "
+                      << k << std::endl;
+            std::get<1>(result) = 0;
+            break;
         } else if (try_handle_leader_change(get_nuraft_return_code(result))) {
             std::cerr << "WARNING: leader changed, retrying..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 

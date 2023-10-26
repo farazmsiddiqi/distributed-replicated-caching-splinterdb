@@ -1,5 +1,6 @@
 #include "server/replica.h"
 
+#include <filesystem>
 #include <iostream>
 
 #include "in_memory_state_mgr.hxx"
@@ -25,7 +26,7 @@ using nuraft::srv_config;
 void replica::default_raft_params_init(raft_params& params) {
     // heartbeat: 100 ms, election timeout: 200 - 400 ms.
     params.heart_beat_interval_ = 100;
-    params.election_timeout_lower_bound_ = 300;
+    params.election_timeout_lower_bound_ = 400;
     params.election_timeout_upper_bound_ = 600;
 
     // Up to 5 logs will be preserved ahead the last snapshot.
@@ -52,6 +53,10 @@ replica::replica(const replica_config& config)
       raft_instance_(nullptr) {
     if (!config_.server_id_) {
         throw std::invalid_argument("server_id must be set");
+    }
+
+    if (!std::filesystem::create_directories("/.logs")) {
+        std::cout << "/.logs already exists ... skipping create" << std::endl;
     }
 
     // Set up Raft logging

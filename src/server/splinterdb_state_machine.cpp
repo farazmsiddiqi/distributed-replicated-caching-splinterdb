@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "common/timer.h"
 #include "server/splinterdb_operation.h"
 
 namespace replicated_splinterdb {
@@ -34,8 +35,11 @@ splinterdb_state_machine::~splinterdb_state_machine() {
 ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
     bool expected = false;
     if (commit_thread_initialized_.compare_exchange_strong(expected, true)) {
+        std::cout << "Registering commit thread." << std::endl;
         splinterdb_register_thread(spl_handle_);
     }
+
+    Timer timer;
 
     splinterdb_operation operation = splinterdb_operation::deserialize(buf);
     slice key_slice, value_slice;
@@ -47,13 +51,16 @@ ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
         case splinterdb_operation::PUT:
             operation.value().fill_slice(value_slice);
             ret_code = splinterdb_insert(spl_handle_, key_slice, value_slice);
+            std::cout << "PUT=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         case splinterdb_operation::UPDATE:
             operation.value().fill_slice(value_slice);
             ret_code = splinterdb_update(spl_handle_, key_slice, value_slice);
+            std::cout << "UPDATE=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         case splinterdb_operation::DELETE:
             ret_code = splinterdb_delete(spl_handle_, key_slice);
+            std::cout << "DELETE=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         default:
             throw std::runtime_error("Unknown operation type.");
@@ -61,7 +68,7 @@ ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
 
     last_committed_idx_ = log_idx;
 
-    ptr<buffer> ret = buffer::alloc(sizeof(log_idx));
+    ptr<buffer> ret = buffer::alloc(sizeof(ret_code));
     buffer_serializer bs(ret);
     bs.put_i32(ret_code);
     return ret;

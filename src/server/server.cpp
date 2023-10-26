@@ -4,9 +4,11 @@
 
 #include "common/rpc.h"
 #include "common/types.h"
+#include "libnuraft/buffer_serializer.hxx"
 
 namespace replicated_splinterdb {
 
+using nuraft::cmd_result_code;
 using nuraft::buffer;
 using nuraft::ptr;
 using std::vector;
@@ -41,13 +43,39 @@ void server::run(uint64_t nthreads) {
 }
 
 static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
-    int32_t spl_rc = -1;
+    int32_t spl_rc = 0;
+    int32_t raft_rc = 999;
     if (result->get_accepted()) {
-        ptr<buffer> buf = result->get();
-        spl_rc = buf->get_int();
+        result->when_ready([&spl_rc, &raft_rc](replica::raft_result& res, ptr<std::exception>& exn) {
+            if (res.get_result_code() != cmd_result_code::OK) {
+                std::cout << "WARNING: replication failed rc="
+                          << res.get_result_code() << ", "
+                          << res.get_result_str() << std::endl;
+                
+                raft_rc = static_cast<int32_t>(res.get_result_code());
+                return;
+            }
+            
+            if (exn != nullptr) {
+                throw *exn;
+            }
+
+            ptr<buffer>& buf = res.get();
+            raft_rc = static_cast<int32_t>(res.get_result_code());
+
+            if (buf == nullptr) {
+                std::cout << "WARNING: got nullptr result: raft_rc=" << raft_rc
+                          << ", " << res.get_result_str() << std::endl;
+                return;
+            }
+
+            nuraft::buffer_serializer bs(buf);
+            spl_rc = bs.get_i32();
+        });
+    } else {
+        raft_rc = result->get_result_code();
     }
 
-    int32_t raft_rc = static_cast<int32_t>(result->get_result_code());
     return std::tuple<int32_t, int32_t, std::string>{spl_rc, raft_rc,
                                                      result->get_result_str()};
 }

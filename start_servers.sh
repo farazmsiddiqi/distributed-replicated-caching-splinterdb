@@ -28,15 +28,17 @@ echo -n "Creating Docker network. Hash: "
 docker network create $NETWORK
 
 CACHEDIR=$PWD/caches/node-1
-rm -rf $CACHEDIR
-mkdir -p $CACHEDIR
+LOGSDIR=$PWD/logs/node-1
+rm -rf $CACHEDIR $LOGSDIR
+mkdir -p $CACHEDIR $LOGSDIR
 
 echo -n "Starting replicated-splinterdb node 1. Hash: "
-docker run --rm -d \
+HASH=$(docker run --rm -d \
     --name "replicated-splinterdb-node-1" \
     --hostname "replicated-splinterdb-node-1" \
     --network $NETWORK \
     -v $CACHEDIR:/cachepages \
+    -v $LOGSDIR:/.logs \
     $SERVER_IMAGE \
     -serverid 1 \
     -raftport 10001 \
@@ -44,8 +46,10 @@ docker run --rm -d \
     -clientport 10003 \
     -nthreads $NSERVER_THREADS \
     -dbfilesize 2048 \
-    -cachesize $CACHESIZE
+    -cachesize $CACHESIZE)
 
+echo $HASH
+docker logs -f $HASH > $LOGSDIR/server.log 2>&1 &
 echo "Mounted directory ($CACHEDIR) on host to /cachepages of container"
 
 sleep 5
@@ -55,14 +59,16 @@ for i in $(seq 2 $NODE_COUNT); do
     set -e
 
     CACHEDIR=$PWD/caches/node-$i
-    rm -rf $CACHEDIR
-    mkdir -p $CACHEDIR
+    LOGSDIR=$PWD/logs/node-$i
+    rm -rf $CACHEDIR $LOGSDIR
+    mkdir -p $CACHEDIR $LOGSDIR
 
-    docker run --rm -d \
+    HASH=$(docker run --rm -d \
         --name "replicated-splinterdb-node-$i" \
         --hostname "replicated-splinterdb-node-$i" \
         --network $NETWORK \
         -v $CACHEDIR:/cachepages \
+        -v $LOGSDIR:/.logs \
         $SERVER_IMAGE \
         -serverid $i \
         -raftport 10001 \
@@ -71,9 +77,12 @@ for i in $(seq 2 $NODE_COUNT); do
         -nthreads $NSERVER_THREADS \
         -seed replicated-splinterdb-node-1:10002 \
         -dbfilesize 2048 \
-        -cachesize $CACHESIZE
-
+        -cachesize $CACHESIZE)
+    
+    echo $HASH
+    docker logs -f $HASH > $LOGSDIR/server.log 2>&1 &
     echo "Mounted directory ($CACHEDIR) on host to /cachepages of container"
+    sleep 1
 
     set +e
 done
