@@ -55,25 +55,25 @@ replica::replica(const replica_config& config)
         throw std::invalid_argument("server_id must be set");
     }
 
-    if (!std::filesystem::create_directories("/.logs")) {
-        std::cout << "/.logs already exists ... skipping create" << std::endl;
+    if (!std::filesystem::create_directories(".logs")) {
+        std::cout << ".logs already exists ... skipping create" << std::endl;
     }
 
     // Set up Raft logging
     std::string raft_log_file_name = config_.raft_log_file_.value_or(
-        "/.logs/srv-" + std::to_string(server_id_) + ".log");
+        ".logs/srv-" + std::to_string(server_id_) + ".log");
     nuraft::ptr<SimpleLogger> log =
         cs_new<SimpleLogger>(raft_log_file_name, config_.log_level_);
     log->setLogLevel(config_.log_level_);
     log->setDispLevel(config_.display_level_);
-    log->setCrashDumpPath("/.logs", true);
+    log->setCrashDumpPath(".logs", true);
     log->start();
 
     logger_ = log;
 
     // Set up SplinterDB logging
     std::string spl_log_file_name = config_.splinterdb_log_file_.value_or(
-        "/.logs/spl-" + std::to_string(server_id_) + ".log");
+        ".logs/spl-" + std::to_string(server_id_) + ".log");
     spl_log_file_ = fopen(spl_log_file_name.c_str(), "w");
     platform_set_log_streams(spl_log_file_, spl_log_file_);
 
