@@ -1,6 +1,8 @@
 #ifndef REPLICATED_SPLINTERDB_TYPES_H
 #define REPLICATED_SPLINTERDB_TYPES_H
 
+#include <cstdint>
+#include <string>
 #include <tuple>
 #include <vector>
 

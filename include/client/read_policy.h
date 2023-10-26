@@ -1,6 +1,7 @@
 #ifndef REPLICATED_SPLINTERDB_READ_POLICY_H
 #define REPLICATED_SPLINTERDB_READ_POLICY_H
 
+#include <cstdint>
 #include <queue>
 
 namespace replicated_splinterdb {
