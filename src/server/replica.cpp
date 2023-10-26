@@ -128,6 +128,10 @@ void replica::shutdown(size_t time_limit_sec) {
     launcher_.shutdown(time_limit_sec);
 }
 
+void replica::register_thread() {
+    splinterdb_register_thread(sm_->get_splinterdb_handle());
+}
+
 void replica::dump_cache() {
     splinterdb_print_cache(sm_->get_splinterdb_handle());
 }

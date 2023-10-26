@@ -41,6 +41,8 @@ class replica {
     void append_log(const splinterdb_operation& operation,
                     handle_commit_result handle_result);
 
+    void register_thread();
+
     int32_t get_id() const { return server_id_; }
 
     int32_t get_leader() const { return raft_instance_->get_leader(); }
