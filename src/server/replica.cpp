@@ -68,7 +68,7 @@ replica::replica(const replica_config& config)
 
     // Set up SplinterDB logging
     std::string spl_log_file_name = config_.splinterdb_log_file_.value_or(
-        "./spl-" + std::to_string(server_id_) + ".log");
+        "/.logs/spl-" + std::to_string(server_id_) + ".log");
     spl_log_file_ = fopen(spl_log_file_name.c_str(), "w");
     platform_set_log_streams(spl_log_file_, spl_log_file_);
 
