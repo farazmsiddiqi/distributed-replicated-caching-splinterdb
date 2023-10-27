@@ -138,7 +138,7 @@ void replica::register_thread() {
 }
 
 void replica::dump_cache() {
-    splinterdb_print_cache(sm_->get_splinterdb_handle());
+    splinterdb_print_cache(sm_->get_splinterdb_handle(), "cachedump");
 }
 
 std::pair<owned_slice, int32_t> replica::read(slice&& key) {

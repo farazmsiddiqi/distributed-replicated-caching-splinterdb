@@ -37,13 +37,15 @@ int main() {
     data_config splinter_data_cfg;
     default_data_config_init(USER_MAX_KEY_SIZE, &splinter_data_cfg);
 
+    platform_set_log_streams(stderr, stderr);
+
     // Basic configuration of a SplinterDB instance
     splinterdb_config splinterdb_cfg;
     memset(&splinterdb_cfg, 0, sizeof(splinterdb_cfg));
     splinterdb_cfg.filename = DB_FILE_NAME;
     splinterdb_cfg.disk_size = (DB_FILE_SIZE_MB * 1024 * 1024);
     splinterdb_cfg.cache_size = (CACHE_SIZE_MB * 1024 * 1024);
-    splinterdb_cfg.data_cfg = &splinter_data_cfg;
+    splinterdb_cfg.data_cfg = &splinter_data_cfg; 
 
     splinterdb_cfg.use_stats = true;
     splinterdb_cfg.cache_use_stats = true;
