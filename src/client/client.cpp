@@ -81,12 +81,13 @@ void client::trigger_cache_dumps() {
 rpc::client& client::get_leader_handle() { return clients_.at(leader_id_); }
 
 bool client::try_handle_leader_change(int32_t raft_rc) {
-    if (raft_rc == CMD_RESULT_NOT_LEADER || raft_rc == CMD_RESULT_REQUEST_CANCELLED) {
+    if (raft_rc == CMD_RESULT_NOT_LEADER ||
+        raft_rc == CMD_RESULT_REQUEST_CANCELLED) {
         int32_t old_leader_id = leader_id_;
         leader_id_ = get_leader_id();
 
         std::cerr << "INFO: leader changed from " << old_leader_id << " to "
-                  << leader_id_ << std::endl; 
+                  << leader_id_ << std::endl;
         return true;
     }
 
@@ -201,7 +202,8 @@ int32_t client::get_leader_id() {
                 std::cerr << "WARNING: no live leader, retrying..."
                           << std::endl;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(delay_ms));
                 delay_ms *= 2;
             }
 

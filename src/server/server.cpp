@@ -8,8 +8,8 @@
 
 namespace replicated_splinterdb {
 
-using nuraft::cmd_result_code;
 using nuraft::buffer;
+using nuraft::cmd_result_code;
 using nuraft::ptr;
 using std::vector;
 
@@ -62,8 +62,6 @@ static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
             std::cout << "WARNING: GOT nullptr RESULT (raft_rc=" << raft_rc
                       << ", " << result->get_result_str() << ")" << std::endl;
         }
-        
-        
     }
 
     return std::tuple<int32_t, int32_t, std::string>{spl_rc, raft_rc,

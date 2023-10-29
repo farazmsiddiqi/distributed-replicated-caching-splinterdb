@@ -45,7 +45,7 @@ int main() {
     splinterdb_cfg.filename = DB_FILE_NAME;
     splinterdb_cfg.disk_size = (DB_FILE_SIZE_MB * 1024 * 1024);
     splinterdb_cfg.cache_size = (CACHE_SIZE_MB * 1024 * 1024);
-    splinterdb_cfg.data_cfg = &splinter_data_cfg; 
+    splinterdb_cfg.data_cfg = &splinter_data_cfg;
 
     splinterdb_cfg.use_stats = true;
     splinterdb_cfg.cache_use_stats = true;
