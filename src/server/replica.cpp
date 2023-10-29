@@ -25,9 +25,9 @@ using nuraft::srv_config;
 
 void replica::default_raft_params_init(raft_params& params) {
     // heartbeat: 100 ms, election timeout: 200 - 400 ms.
-    params.heart_beat_interval_ = 150;
-    params.election_timeout_lower_bound_ = 600;
-    params.election_timeout_upper_bound_ = 800;
+    params.heart_beat_interval_ = 100;
+    params.election_timeout_lower_bound_ = 300;
+    params.election_timeout_upper_bound_ = 500;
 
     // Up to 5 logs will be preserved ahead the last snapshot.
     params.reserved_log_items_ = 1000000;
@@ -189,8 +189,8 @@ void replica::append_log(const splinterdb_operation& operation,
 
     if (!ret->get_accepted()) {
         // Log append rejected, usually because this node is not a leader.
-        s_warn << "failed to append log: " << ret->get_result_code() << " ("
-               << usToString(timer->getTimeUs()) << ")";
+        std::cout << "failed to append log: " << ret->get_result_code() << " ("
+               << usToString(timer->getTimeUs()) << ")" << std::endl;
         return;
     }
 

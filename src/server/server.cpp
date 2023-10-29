@@ -45,7 +45,7 @@ void server::run(uint64_t nthreads) {
 static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
     int32_t spl_rc = 0;
     int32_t raft_rc = 999;
-    if (result->get_accepted()) {
+    if (result->has_result()) {
         ptr<buffer> buf = result->get();
         spl_rc = buf->get_int();
         raft_rc = result->get_result_code();
@@ -76,6 +76,7 @@ static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
         //     spl_rc = bs.get_i32();
         // });
     } else {
+        std::cout << "WARNING: DID NOT GET RESULT" << std::endl;
         raft_rc = result->get_result_code();
     }
 
