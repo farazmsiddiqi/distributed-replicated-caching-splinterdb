@@ -82,13 +82,7 @@ void server::initialize() {
 
     // void -> bool
     client_srv_.bind(RPC_SPLINTERDB_DUMPCACHE, [this]() {
-        std::thread t([this]() {
-            std::cout << "Dumping cache ... " << std::flush;
-            replica_instance_.dump_cache();
-            std::cout << "done" << std::endl;
-        });
-
-        t.detach();
+        replica_instance_.dump_cache();
         return true;
     });
 
