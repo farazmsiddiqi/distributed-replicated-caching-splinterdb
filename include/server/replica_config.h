@@ -16,7 +16,7 @@ struct replica_config {
           raft_port_(25000),
           client_port_(25001),
           addr_("localhost"),
-          asio_thread_pool_size_(4),
+          asio_thread_pool_size_(10),
           snapshot_frequency_(0),
           initialization_delay_ms_(250),
           initialization_retries_(20),
