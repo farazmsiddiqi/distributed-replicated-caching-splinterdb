@@ -51,16 +51,13 @@ ptr<buffer> splinterdb_state_machine::commit(const ulong log_idx, buffer& buf) {
         case splinterdb_operation::PUT:
             operation.value().fill_slice(value_slice);
             ret_code = splinterdb_insert(spl_handle_, key_slice, value_slice);
-            std::cout << "PUT=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         case splinterdb_operation::UPDATE:
             operation.value().fill_slice(value_slice);
             ret_code = splinterdb_update(spl_handle_, key_slice, value_slice);
-            std::cout << "UPDATE=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         case splinterdb_operation::DELETE:
             ret_code = splinterdb_delete(spl_handle_, key_slice);
-            std::cout << "DELETE=" << ret_code << " took " << timer.getTimeUs() << " us" << std::endl;
             break;
         default:
             throw std::runtime_error("Unknown operation type.");
