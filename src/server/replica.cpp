@@ -36,6 +36,8 @@ void replica::default_raft_params_init(raft_params& params) {
     // According to this method, `append_log` function
     // should be handled differently.
     params.return_method_ = raft_params::blocking;
+
+    params.auto_forwarding_ = true;
 }
 
 replica::replica(const replica_config& config)
