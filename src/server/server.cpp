@@ -53,35 +53,17 @@ static rpc_mutation_result extract_result(ptr<replica::raft_result> result) {
         std::cout << "WARNING: SM did not yield result yet" << std::endl;
         raft_rc = result->get_result_code();
     } else {
-        ptr<buffer> buf = result->get();
-        spl_rc = buf->get_int();
         raft_rc = result->get_result_code();
-        // result->when_ready([&spl_rc, &raft_rc](replica::raft_result& res, ptr<std::exception>& exn) {
-        //     if (res.get_result_code() != cmd_result_code::OK) {
-        //         std::cout << "WARNING: replication failed rc="
-        //                   << res.get_result_code() << ", "
-        //                   << res.get_result_str() << std::endl;
-                
-        //         raft_rc = static_cast<int32_t>(res.get_result_code());
-        //         return;
-        //     }
-            
-        //     if (exn != nullptr) {
-        //         throw *exn;
-        //     }
+        ptr<buffer> buf = result->get();
 
-        //     ptr<buffer>& buf = res.get();
-        //     raft_rc = static_cast<int32_t>(res.get_result_code());
-
-        //     if (buf == nullptr) {
-        //         std::cout << "WARNING: got nullptr result: raft_rc=" << raft_rc
-        //                   << ", " << res.get_result_str() << std::endl;
-        //         return;
-        //     }
-
-        //     nuraft::buffer_serializer bs(buf);
-        //     spl_rc = bs.get_i32();
-        // });
+        if (buf != nullptr) {
+            spl_rc = buf->get_int();
+        } else {
+            std::cout << "WARNING: GOT nullptr RESULT (raft_rc=" << raft_rc
+                      << ", " << result->get_result_str() << ")" << std::endl;
+        }
+        
+        
     }
 
     return std::tuple<int32_t, int32_t, std::string>{spl_rc, raft_rc,
