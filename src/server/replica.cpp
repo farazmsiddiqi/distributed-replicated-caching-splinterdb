@@ -26,8 +26,8 @@ using nuraft::srv_config;
 void replica::default_raft_params_init(raft_params& params) {
     // heartbeat: 100 ms, election timeout: 200 - 400 ms.
     params.heart_beat_interval_ = 100;
-    params.election_timeout_lower_bound_ = 400;
-    params.election_timeout_upper_bound_ = 600;
+    params.election_timeout_lower_bound_ = 200;
+    params.election_timeout_upper_bound_ = 400;
 
     // Up to 5 logs will be preserved ahead the last snapshot.
     params.reserved_log_items_ = 1000000;
