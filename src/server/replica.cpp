@@ -181,38 +181,8 @@ std::pair<cmd_result_code, std::string> replica::add_server(
     return std::make_pair(ret->get_result_code(), ret->get_result_str());
 }
 
-void replica::append_log(const splinterdb_operation& operation,
-                         handle_commit_result handle_result) {
-    ptr<buffer> new_log(operation.serialize());
-    ptr<Timer> timer = cs_new<Timer>();
-    ptr<raft_result> ret = raft_instance_->append_entries({new_log});
-
-    if (!ret->get_accepted()) {
-        // Log append rejected, usually because this node is not a leader.
-        std::cout << "failed to append log: " << ret->get_result_code() << " ("
-               << usToString(timer->getTimeUs()) << ")" << std::endl;
-        return;
-    }
-
-    if (config_.get_return_method() == raft_params::blocking) {
-        // Blocking mode:
-        //   `append_entries` returns after getting a consensus,
-        //   so that `ret` already has the result from state machine.
-        ptr<std::exception> err(nullptr);
-        handle_result(timer, *ret, err);
-    } else if (config_.get_return_method() == raft_params::async_handler) {
-        // Async mode:
-        //   `append_entries` returns immediately.
-        //   `handle_result` will be invoked asynchronously,
-        //   after getting a consensus.
-        ret->when_ready(std::bind(handle_result, timer, std::placeholders::_1,
-                                  std::placeholders::_2));
-    }
-}
-
 ptr<replica::raft_result> replica::append_log(const splinterdb_operation& op) {
     ptr<buffer> new_log(op.serialize());
-    ptr<Timer> timer = cs_new<Timer>();
     ptr<raft_result> ret = raft_instance_->append_entries({new_log});
 
     if (config_.get_return_method() == raft_params::blocking) {
