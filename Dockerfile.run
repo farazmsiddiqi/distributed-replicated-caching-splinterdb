@@ -7,7 +7,7 @@ RUN apt-get update -y \
 ENV CC clang
 ENV CXX clang++-13
 ENV LD clang++-13
-ENV LIBS_DIR /work/libs/
+ENV LIBS_DIR /work/build
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
 COPY third-party/ /work/third-party/
@@ -30,7 +30,7 @@ RUN apt-get update -y \
     && apt-get install -y libgflags2.2 \
     && apt-get clean
 
-COPY --from=build /work/libs/libsplinterdb.so ${LIBS_DIR}
+COPY --from=build /work/build/libsplinterdb.so ${LIBS_DIR}
 COPY --from=build /work/build/apps /apps
 
 WORKDIR /apps
