@@ -1,34 +1,29 @@
 # replicated-splinterdb
 
+## Building from Scratch
+
+```bash
+export NTHREADS=10
+export CC=clang
+export LD=clang
+export CXX=clang++
+git clone https://github.com/nkaush/replicated-splinterdb.git
+cd replicated-splinterdb/
+git submodule update --init --recursive
+sudo ./setup_server.sh
+mkdir build && cd build
+cmake .. && make -j $NTHREADS all spl-server
+export PATH=`pwd`/apps:$PATH  # OPTIONAL: Add newly built executables to PATH
+```
+
 ## Development Process
 
 Run `make dev` in a shell to start a container with all the necessary dependencies to build this project. This make rule will also mount the `src/`, `apps/`, and `include/` directories onto the `/work` directory in the container. The `libnuraft` and `libsplinterdb` libraries will be built during the container image build stage.
 
 The container will start in a shell in the `/work/build` directory. Run `./build` to build the source code. You can make chanegs to any files in the `src/`, `apps/`, and `include/` directories and recompile them without exiting and restarting the container. Simply make changes and run `./build` again to recompile.
 
-You will need to restart the container if you make changes to the `libnuraft` and/or `libsplinterdb` libraries/source code.
-
 ## TODOs
 
-- [x] implement state machine for splinterdb
-    - see [state machine example](third-party/nuraft/examples/calculator/calc_state_machine.hxx)
-    - see [log store example](third-party/nuraft/examples/in_memory_log_store.hxx)
-    - [x] state machine implementation
-- [x] create a API for server
-    - Invokes the state machine API
-    - [x] read
-    - [x] update
-    - [x] insert
-    - [x] delete 
-    - [x] dump cache (no-op for now)
-- [x] create a client API
-    - [x] read
-    - [x] update
-    - [x] insert
-    - [x] delete 
-    - [x] dump cache
-- [x] [LATER] YCSB binding to client API
-- [x] Examine cache and dump to file/stderr/stdout
 - [ ] Client cache reset API
 - [ ] YAML config parsing (see [yaml-cpp](https://github.com/jbeder/yaml-cpp/wiki/Tutorial))
 

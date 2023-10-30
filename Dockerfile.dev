@@ -7,7 +7,7 @@ RUN apt-get update -y \
 ENV CC clang
 ENV CXX clang++-13
 ENV LD clang++-13
-ENV LIBS_DIR /work/libs/
+ENV LIBS_DIR /work/build/
 ENV LD_LIBRARY_PATH ${LIBS_DIR}
 
 COPY third-party/nuraft /work/third-party/nuraft

@@ -31,3 +31,15 @@ add_subdirectory("${ReplicatedSplinterDB_SOURCE_DIR}/src/server")
 
 set_property(DIRECTORY "${ReplicatedSplinterDB_SOURCE_DIR}/third-party/nuraft/tests" PROPERTY EXCLUDE_FROM_ALL True)
 set_property(DIRECTORY "${ReplicatedSplinterDB_SOURCE_DIR}/third-party/nuraft/examples" PROPERTY EXCLUDE_FROM_ALL True)
+
+add_custom_target(
+    clean-splinterdb
+    COMMAND ${CMAKE_MAKE_PROGRAM} clean
+    WORKING_DIRECTORY ${ReplicatedSplinterDB_SOURCE_DIR}/third-party/splinterdb
+)
+
+add_custom_target(
+    libsplinterdb.so ALL 
+    COMMAND ${CMAKE_MAKE_PROGRAM} LIBDIR=${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/libsplinterdb.so
+    WORKING_DIRECTORY ${ReplicatedSplinterDB_SOURCE_DIR}/third-party/splinterdb
+)

@@ -2,7 +2,5 @@
 
 set -e
 
-bash -c "cd /work/third-party/splinterdb && make BUILD_VERBOSE=1 LIBDIR=${LIBS_DIR} ${LIBS_DIR}/libsplinterdb.so"
-
 cmake .. && make all spl-server spl-client -j6
 EXIT_CODE=$?
