@@ -84,6 +84,14 @@ void server::initialize() {
         return true;
     });
 
+    // void -> bool
+    client_srv_.bind(RPC_SPLINTERDB_CLEARCACHE, [this]() {
+        std::cout << "starting server-side clear cache..." << std::endl;
+        replica_instance_.clear_cache();
+        std::cout << "finished server-side clear cache RPC! Returning true..." << std::endl;
+        return true;
+    });
+
     // void -> std::string
     client_srv_.bind(RPC_PING, []() { return "pong"; });
 

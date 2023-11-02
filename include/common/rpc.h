@@ -15,5 +15,6 @@
 #define RPC_SPLINTERDB_UPDATE "splinterdb_update"
 #define RPC_SPLINTERDB_DELETE "splinterdb_delete"
 #define RPC_SPLINTERDB_DUMPCACHE "splinterdb_dumpcache"
+#define RPC_SPLINTERDB_CLEARCACHE "splinterdb_clearcache"
 
 #endif  // REPLICATED_SPLINTERDB_COMMON_RPC_H

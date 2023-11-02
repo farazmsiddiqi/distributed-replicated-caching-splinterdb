@@ -32,6 +32,8 @@ class client {
 
     void trigger_cache_dumps();
 
+    void trigger_cache_clear();
+
     std::vector<std::tuple<int32_t, std::string>> get_all_servers();
 
     int32_t get_leader_id();

@@ -30,6 +30,8 @@ class replica {
 
     void dump_cache();
 
+    void clear_cache();
+
     std::pair<owned_slice, int32_t> read(slice&& key);
 
     std::pair<nuraft::cmd_result_code, std::string> add_server(

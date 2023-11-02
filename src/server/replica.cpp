@@ -143,6 +143,11 @@ void replica::dump_cache() {
     splinterdb_print_cache(sm_->get_splinterdb_handle(), "cachedump");
 }
 
+void replica::clear_cache() {
+    std::cout << "hit clear cache in replica!" << std::endl;
+    splinterdb_clear_cache(sm_->get_splinterdb_handle());
+}
+
 std::pair<owned_slice, int32_t> replica::read(slice&& key) {
     splinterdb_lookup_result result;
     splinterdb_lookup_result_init(sm_->get_splinterdb_handle(), &result, 0,

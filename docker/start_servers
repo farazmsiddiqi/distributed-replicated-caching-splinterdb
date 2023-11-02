@@ -37,7 +37,7 @@ HASH=$(docker run --rm -d \
     --name "replicated-splinterdb-node-1" \
     --hostname "replicated-splinterdb-node-1" \
     --network $NETWORK \
-    -v $CACHEDIR:/cachepages \
+    -v $CACHEDIR:/apps/cachedump \
     -v $LOGSDIR:/.logs \
     $SERVER_IMAGE \
     -serverid 1 \
@@ -67,7 +67,7 @@ for i in $(seq 2 $NODE_COUNT); do
         --name "replicated-splinterdb-node-$i" \
         --hostname "replicated-splinterdb-node-$i" \
         --network $NETWORK \
-        -v $CACHEDIR:/cachepages \
+        -v $CACHEDIR:/apps/cachedump \
         -v $LOGSDIR:/.logs \
         $SERVER_IMAGE \
         -serverid $i \
