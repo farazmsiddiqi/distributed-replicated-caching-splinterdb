@@ -86,9 +86,9 @@ void server::initialize() {
 
     // void -> bool
     client_srv_.bind(RPC_SPLINTERDB_CLEARCACHE, [this]() {
-        std::cout << "starting server-side clear cache..." << std::endl;
+        std::cout << "Clearing splinterdb cache ... " << std::flush;
         replica_instance_.clear_cache();
-        std::cout << "finished server-side clear cache RPC! Returning true..." << std::endl;
+        std::cout << "done." << std::endl;
         return true;
     });
 
