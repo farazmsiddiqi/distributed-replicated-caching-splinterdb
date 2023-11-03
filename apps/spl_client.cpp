@@ -113,6 +113,7 @@ static bool handle_command(client& c, const std::vector<std::string>& tokens) {
         return true;
     } else if (cmd == "clearcache") {
         c.trigger_cache_clear();
+        return true;
     } else if (cmd == "help") {
         std::cout << "Commands:" << std::endl;
         std::cout << "  put <key> <value>" << std::endl;
