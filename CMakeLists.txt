@@ -12,8 +12,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 
 # Import library shared objects and include directories
-link_directories("${ReplicatedSplinterDB_SOURCE_DIR}/build/")
-link_directories("${ReplicatedSplinterDB_SOURCE_DIR}/build/third-party/nuraft")
+link_directories("${CMAKE_CURRENT_BINARY_DIR}")
+link_directories("${CMAKE_CURRENT_BINARY_DIR}/third-party/nuraft")
 
 # Include directories
 include_directories("${ReplicatedSplinterDB_SOURCE_DIR}/include")
